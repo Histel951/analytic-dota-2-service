@@ -87,7 +87,6 @@ final readonly class PlayerMatchStats
         private Side $side,
         private bool $win,
 
-        private Lane $lane,
         private Role $role,
 
         private DateTimeImmutable $startTime,
@@ -272,11 +271,6 @@ final readonly class PlayerMatchStats
     public function isWin(): bool
     {
         return $this->win;
-    }
-
-    public function getLane(): Lane
-    {
-        return $this->lane;
     }
 
     public function getRole(): Role

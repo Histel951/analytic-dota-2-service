@@ -20,15 +20,15 @@ final readonly class PlayerMatchExtractor
         $duration = $matchDetail->getDuration();
 
         return array_merge(
-            $this->extractMatchStats($winner, $id, $duration),
-            $this->extractMatchStats($loser, $id, $duration)
+            $this->extractMatchStats($winner, $id, $duration, $matchDetail->getStartTime()),
+            $this->extractMatchStats($loser, $id, $duration, $matchDetail->getStartTime())
         );
     }
 
     private function extractMatchStats(TeamSide $teamSide, MatchId $matchId, Duration $duration, MatchStartTime $startTime): array
     {
         $result = [];
-        $isWin = $teamSide->isWinner();
+        $isWin = $teamSide->isWon();
 
         foreach ($teamSide->getPlayers()->getValue() as $player) {
             $result[] = new PlayerMatchStats(
@@ -40,20 +40,20 @@ final readonly class PlayerMatchExtractor
                 kills: $player->getKda()->getKills(),
                 deaths: $player->getKda()->getDeaths(),
                 assists: $player->getKda()->getAssists(),
-                gpm: $player->getEconomic()->getGPM(),
-                xpm: $player->getEconomic()->getXPM(),
-                netWorth: $player->getEconomic()->getNetWorth(),
-                totalGold: $player->getEconomic()->getTotalGold(),
-                totalXp: $player->getEconomic()->getTotalXp(),
-                goldSpend: $player->getEconomic()->getGoldSpend(),
-                creepsLastHits: $player->getCreeps()->getCreepsLastHits(),
-                creepsLaneLastHits: $player->getCreeps()->getCreepsLaneLastHits(),
-                creepsDenies: $player->getCreeps()->getCreepsDenies(),
-                creepsNeutrals: $player->getCreeps()->getCreepsNeutrals(),
-                creepsAncients: $player->getCreeps()->getCreepsAncients(),
-                roshanKills: $player->getObjectActives()->getRoshanKills(),
-                towerKills: $player->getObjectActives()->getTowerKills(),
-                runePickups: $player->getObjectActives()->getRunePickups(),
+                gpm: $player->getEconomy()->getGPM(),
+                xpm: $player->getEconomy()->getXPM(),
+                netWorth: $player->getEconomy()->getNetWorth(),
+                totalGold: $player->getEconomy()->getTotalGold(),
+                totalXp: $player->getEconomy()->getTotalXp(),
+                goldSpend: $player->getEconomy()->getGoldSpent(),
+                creepsLastHits: $player->getCreeps()->getLastHits(),
+                creepsLaneLastHits: $player->getCreeps()->getLaneCreeps(),
+                creepsDenies: $player->getCreeps()->getDenies(),
+                creepsNeutrals: $player->getCreeps()->getNeutralCreeps(),
+                creepsAncients: $player->getCreeps()->getAncientCreeps(),
+                roshanKills: $player->getObjectives()->getRoshanKills(),
+                towerKills: $player->getObjectives()->getTowerKills(),
+                runePickups: $player->getObjectives()->getRunePickups(),
                 observersPlaced: $player->getWarding()->getObserversPlaced(),
                 observersDestroyed: $player->getWarding()->getObserversDestroyed(),
                 sentryPlaced: $player->getWarding()->getSentryPlaced(),
@@ -68,8 +68,7 @@ final readonly class PlayerMatchExtractor
                 teamfightParticipation: $player->getUtility()->getTeamfightParticipation(),
                 side: $teamSide->getSide(),
                 win: $isWin,
-                lane: $player->getPosition()->getLane(),
-                role: $player->getPosition()->getRole(),
+                role: $player->getRole(),
                 startTime: $startTime->getValue(),
             );
         }
