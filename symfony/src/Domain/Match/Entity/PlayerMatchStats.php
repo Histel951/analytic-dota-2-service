@@ -91,7 +91,6 @@ final readonly class PlayerMatchStats
         private Role $role,
 
         private DateTimeImmutable $startTime,
-        private DateTimeImmutable $createdAt,
     ) {
     }
 
@@ -288,10 +287,5 @@ final readonly class PlayerMatchStats
     public function getStartTime(): DateTimeImmutable
     {
         return $this->startTime;
-    }
-
-    public function getCreatedAt(): DateTimeImmutable
-    {
-        return $this->createdAt;
     }
 }
