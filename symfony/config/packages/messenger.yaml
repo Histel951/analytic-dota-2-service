@@ -1,0 +1,20 @@
+framework:
+    messenger:
+        transports:
+            kafka_parse_matches:
+                dsn: 'rdkafka://'
+
+                options:
+                    global:
+                        group.id: 'matches-parser'
+                        metadata.broker.list: '%env(KAFKA_BROKERS)%'
+
+                    topic:
+                        name: 'dota2.matches.parse.v1'
+
+            failed:
+                dsn: 'doctrine://default?queue_name=failed'
+
+        routing:
+            'App\Application\Match\Message\ParseMatchMessage':
+                - kafka_parse_matches
