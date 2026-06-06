@@ -6,7 +6,7 @@ namespace App\Application\Match\Services;
 
 use App\Domain\Match\Repository\MatchRepository;
 use App\Infrastructure\Kafka\Producer\MatchProducer;
-use App\Application\Match\Extractor\PlayerMatchExtractor;
+use App\Application\Match\Extractor\PlayerMatch~Extractor;
 
 final readonly class MatchIngestionService
 {
