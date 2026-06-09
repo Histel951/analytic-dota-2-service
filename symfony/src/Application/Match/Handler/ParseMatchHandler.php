@@ -5,8 +5,12 @@ namespace App\Application\Match\Handler;
 
 use App\Application\Match\Extractor\PlayerMatchExtractor;
 use App\Application\Match\Message\ParseMatchMessage;
+use App\Domain\Match\Entity\MatchEntity;
+use App\Domain\Match\Entity\MatchProcessing;
+use App\Domain\Match\Enum\MatchProcessingStatus;
 use App\Domain\Match\Repository\AnalyticMatchRepository;
 use App\Domain\Match\Repository\MatchRepository;
+use DateTimeImmutable;
 use Histel951\Dota2Api\Client\Dota2ApiClient;
 use Histel951\Dota2Api\Domain\Common\Exceptions\InvalidMatchIdException;
 use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
@@ -29,14 +33,44 @@ final readonly class ParseMatchHandler
      */
     public function __invoke(ParseMatchMessage $message): void
     {
-        $match = $this->client->matches()->getMatch(new MatchId($message->getMatchId()));
+        $matchId = new MatchId($message->getMatchId());
+        $match = $this->client->matches()->getMatch($matchId);
+        $fetchedAt = new DateTimeImmutable();
         $playersMatchData = $this->extractor->extract($match->getMatchDetail());
 
-        foreach ($playersMatchData as $playerMatchData) {
-            $this->analyticMatchRepository->insertMatchStats($playerMatchData);
-        }
 
-        // todo: придумать чё добавлять по матчам в бд
-        $this->matchRepository->insert();
+        $analyticsProcessedAt = new DateTimeImmutable();
+        $this->analyticMatchRepository->insertMultiplyMatchStats($playersMatchData);
+
+
+
+        $parsedAt = new DateTimeImmutable();
+        $newMatch = new MatchEntity(
+            matchId: $matchId,
+            startTime: $match->getMatchDetail()->getStartTime()->getValue(),
+            duration: $match->getMatchDetail()->getDuration()->getSeconds(),
+            radiantWin: $match->getMatchDetail()->getRadiant()->isWon(),
+
+        );
+        $this->matchRepository->save($newMatch);
+
+        $matchProcessing = new MatchProcessing(
+            matchId: $matchId,
+            parsedAt: $parsedAt,
+            fetchedAt: $fetchedAt,
+            analyticsProcessedAt: $analyticsProcessedAt,
+            fantasyProcessedAt: null,
+            status: MatchProcessingStatus::COMPLETED
+        );
+        $this->matchRepository->saveProccessingStatus($matchProcessing);
+
+        foreach ($match->getMatchDetail()->getPlayers()->getValue() as $player) {
+            $this->matchRepository->saveMatchPlayer(
+                player_id: $player->getIdentity()->getPlayerId(),
+                match_id: $match->getMatchId()->getValue(),
+                nickname: $player->getIdentity()->getPlayerProName()->getValue()
+            );
+
+        }
     }
 }

@@ -47,7 +47,7 @@ CREATE TABLE player_match_stats
     win Bool,
 
     lane UInt8,
-    role LowCardinality(String),
+    role UInt8,
 
     start_time DateTime,
     created_at DateTime DEFAULT now()
