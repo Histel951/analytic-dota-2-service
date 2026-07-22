@@ -34,6 +34,14 @@ final readonly class FetchMatchFromApiHandler
         $matchId = new MatchId($message->getMatchId());
         
         $processing = $this->processingRepository->findByMatchId($matchId);
+        if ($processing !== null && $processing->isCompleted()) {
+            $this->logger->info('Match already processed, skipping', [
+                'match_id' => $message->getMatchId(),
+                'status' => $processing->getStatus()->value,
+            ]);
+            return;
+        }
+
         if ($processing === null) {
             $processing = new MatchProcessing(
                 matchId: $matchId,
