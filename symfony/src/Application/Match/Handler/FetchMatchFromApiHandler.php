@@ -1,0 +1,99 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Application\Match\Handler;
+
+use App\Application\Match\Message\MatchFailedMessage;
+use App\Application\Match\Message\MatchFetchedMessage;
+use App\Application\Match\Message\ParseMatchMessage;
+use App\Domain\Match\Entity\MatchProcessing;
+use App\Domain\Match\Enum\MatchProcessingStatus;
+use App\Domain\Match\Repository\MatchProcessingRepository;
+use DateTimeImmutable;
+use Histel951\Dota2Api\Client\Dota2ApiClient;
+use Histel951\Dota2Api\Domain\Common\Exceptions\InvalidMatchIdException;
+use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Throwable;
+
+#[AsMessageHandler]
+final readonly class FetchMatchFromApiHandler
+{
+    public function __construct(
+        private Dota2ApiClient $client,
+        private MatchProcessingRepository $processingRepository,
+        private MessageBusInterface $messageBus,
+        private LoggerInterface $logger,
+    ) {
+    }
+
+    public function __invoke(ParseMatchMessage $message): void
+    {
+        $matchId = new MatchId($message->getMatchId());
+        
+        $processing = $this->processingRepository->findByMatchId($matchId);
+        if ($processing === null) {
+            $processing = new MatchProcessing(
+                matchId: $matchId,
+                parsedAt: new DateTimeImmutable(),
+                status: MatchProcessingStatus::PENDING
+            );
+            $this->processingRepository->save($processing);
+        }
+
+        try {
+            $processing = $processing->markAsFetched();
+            $this->processingRepository->update($processing);
+
+            $matchResponse = $this->client->matches()->getMatch($matchId);
+            $matchDetail = $matchResponse->getMatchDetail();
+            
+            if ($matchDetail === null) {
+                throw new \RuntimeException(
+                    'Match detail is null. Match may not exist or API returned incomplete data.'
+                );
+            }
+
+            $this->messageBus->dispatch(
+                MatchFetchedMessage::fromMatchDetail(
+                    $message->getMatchId(),
+                    $matchDetail
+                )
+            );
+
+            $this->logger->info('Match fetched successfully', [
+                'match_id' => $message->getMatchId(),
+            ]);
+
+        } catch (InvalidMatchIdException $e) {
+            $this->handleError($matchId, $e, 'invalid_match_id');
+        } catch (Throwable $e) {
+            $this->handleError($matchId, $e, 'fetch_error');
+        }
+    }
+
+    private function handleError(MatchId $matchId, Throwable $error, string $errorType): void
+    {
+        $this->logger->error('Failed to fetch match', [
+            'match_id' => $matchId->getValue(),
+            'error' => $error->getMessage(),
+            'error_type' => $errorType,
+        ]);
+
+        $processing = $this->processingRepository->findByMatchId($matchId);
+        if ($processing !== null) {
+            $processing = $processing->markAsFailed();
+            $this->processingRepository->update($processing);
+        }
+
+        $this->messageBus->dispatch(
+            new MatchFailedMessage(
+                matchId: $matchId->getValue(),
+                errorMessage: $error->getMessage(),
+                errorType: $errorType
+            )
+        );
+    }
+}

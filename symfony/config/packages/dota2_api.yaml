@@ -1,0 +1,5 @@
+dota2_api:
+  base_url: 'https://api.opendota.com/api/'
+  api_key: null
+  timeout: 30
+  source: 'opendota'

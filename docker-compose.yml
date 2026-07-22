@@ -6,6 +6,8 @@ services:
       dockerfile: docker/php/Dockerfile
     container_name: dota_app
     working_dir: /var/www
+    env_file:
+      - .env
     volumes:
       - ./symfony:/var/www
     depends_on:
@@ -49,12 +51,9 @@ services:
     ports:
       - "8123:8123"
       - "9000:9000"
-    environment:
-      CLICKHOUSE_DB: analytics
-      CLICKHOUSE_USER: dota
-      CLICKHOUSE_PASSWORD: dota_password
     volumes:
       - clickhouse_data:/var/lib/clickhouse
+      - ./docker/clickhouse/users.xml:/etc/clickhouse-server/users.d/users.xml
 
   kafka:
     image: apache/kafka:4.1.1
@@ -70,6 +69,12 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -81,6 +86,39 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
     depends_on:
       - kafka
+
+  worker_kafka:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: dota_worker_kafka
+    working_dir: /var/www
+    command: php bin/console messenger:consume kafka_parse_matches --time-limit=3600
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./symfony:/var/www
+    depends_on:
+      postgres:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+
+  worker_async:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: dota_worker_async
+    working_dir: /var/www
+    command: php bin/console messenger:consume async --time-limit=3600
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./symfony:/var/www
+    depends_on:
+      - postgres
 
 volumes:
   postgres_data:

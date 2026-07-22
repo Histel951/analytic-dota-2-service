@@ -8,17 +8,6 @@ CREATE TABLE matches
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- на бумаге, придумать стоит ли хранить сырые данные матчей
-CREATE TABLE match_raw_data
-(
-    match_id BIGINT,
-    source VARCHAR(32),
-    payload JSONB,
-    created_at TIMESTAMP,
-
-    PRIMARY KEY (match_id, source)
-);
-
 CREATE TABLE match_players
 (
     match_id BIGINT,
