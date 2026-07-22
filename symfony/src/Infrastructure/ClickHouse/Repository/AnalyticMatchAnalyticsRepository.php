@@ -121,13 +121,13 @@ final readonly class AnalyticMatchAnalyticsRepository implements AnalyticMatchRe
             'hero_healing' => $match->getHeroHealing()->getValue(),
 
             'buyback_count' => $match->getBuybackCount()->getValue(),
-            'first_blood_claimed' => $match->isFirstBloodClaimed(),
+            'first_blood_claimed' => (int)$match->isFirstBloodClaimed(),
             'courier_kills' => $match->getCourierKills()->getValue(),
             'stuns' => $match->getStuns()->getValue(),
             'teamfight_participation' => $match->getTeamfightParticipation()->getValue(),
 
             'side' => $match->getSide()->value,
-            'win' => $match->isWin(),
+            'win' => (int)$match->isWin(),
 
             'lane' => $match->getRole()->toInt(),
             'role' => $match->getRole()->toInt(),

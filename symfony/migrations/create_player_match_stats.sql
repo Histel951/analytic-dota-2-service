@@ -52,5 +52,5 @@ CREATE TABLE player_match_stats
     start_time DateTime,
     created_at DateTime DEFAULT now()
 )
-    ENGINE = MergeTree
+    ENGINE = ReplacingMergeTree(created_at)
 ORDER BY (player_id, match_id);

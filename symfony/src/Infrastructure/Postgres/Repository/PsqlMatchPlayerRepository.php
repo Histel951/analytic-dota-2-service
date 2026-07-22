@@ -51,7 +51,8 @@ final readonly class PsqlMatchPlayerRepository implements MatchPlayersRepository
 
         $sql = "INSERT INTO " . self::TABLE . " 
                 (match_id, player_id, player_pro_name) 
-                VALUES " . implode(', ', $values);
+                VALUES " . implode(', ', $values) . "
+                ON CONFLICT (match_id, player_id) DO NOTHING";
 
         $this->connection->executeStatement($sql, $parameters);
     }

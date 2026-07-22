@@ -30,6 +30,13 @@ services:
         arguments:
             $clickhouse: '@ClickHouseDB\Client'
 
+    App\Infrastructure\ClickHouse\Repository\ClickHousePlayerStatsReadRepository:
+        arguments:
+            $clickhouse: '@ClickHouseDB\Client'
+
+    App\Domain\PlayerStats\Repository\PlayerStatsReadRepository:
+        alias: App\Infrastructure\ClickHouse\Repository\ClickHousePlayerStatsReadRepository
+
     Histel951\Dota2Api\Client\Dota2ApiClient:
         autowire: true
         lazy: false
