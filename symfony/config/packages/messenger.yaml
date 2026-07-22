@@ -2,19 +2,41 @@ framework:
     messenger:
         transports:
             kafka_parse_matches:
-                dsn: 'rdkafka://'
-
+                dsn: 'ed+kafka://kafka:9092'
                 options:
-                    global:
-                        group.id: 'matches-parser'
-                        metadata.broker.list: '%env(KAFKA_BROKERS)%'
-
-                    topic:
-                        name: 'dota2.matches.parse.v1'
-
-            failed:
-                dsn: 'doctrine://default?queue_name=failed'
+                    topics: ['dota2.matches.parse.v1']
+                    consumer:
+                        config:
+                            group.id: 'matches-parser'
+                            auto.offset.reset: 'earliest'
+                retry_strategy:
+                    max_retries: 0
+            
+            kafka_failed_matches:
+                dsn: 'ed+kafka://kafka:9092'
+                serializer: 'App\Infrastructure\Kafka\Serializer\MatchFailedKafkaSerializer'
+                options:
+                    topics: ['dota2.matches.failed.v1']
+                    producer:
+                        config:
+                            acks: 'all'
+                            retries: '3'
+            
+            async:
+                dsn: 'doctrine://default?auto_setup=true'
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
 
         routing:
             'App\Application\Match\Message\ParseMatchMessage':
                 - kafka_parse_matches
+            'App\Application\Match\Message\MatchFetchedMessage':
+                - async
+            'App\Application\Match\Message\MatchAnalyticsProcessedMessage':
+                - async
+            'App\Application\Match\Message\MatchFailedMessage':
+                - async
+            'App\Application\Match\Message\MatchFailedKafkaMessage':
+                - kafka_failed_matches

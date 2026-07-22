@@ -43,11 +43,11 @@ CREATE TABLE player_match_stats
     stuns Float32,
     teamfight_participation Float32,
 
-    side Enum('radiant', 'dire'),
+    side String,
     win Bool,
 
     lane UInt8,
-    role LowCardinality(String),
+    role UInt8,
 
     start_time DateTime,
     created_at DateTime DEFAULT now()

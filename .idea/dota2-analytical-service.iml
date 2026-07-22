@@ -69,6 +69,19 @@
       <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/symfony/yaml" />
       <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/symfony/polyfill-php84" />
       <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/symfony/polyfill-php85" />
+      <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/alvarorosado/event-driven-kafka-messenger-transport" />
+      <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/nyholm/psr7" />
+      <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/phpdocumentor/reflection-common" />
+      <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/phpdocumentor/reflection-docblock" />
+      <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/phpdocumentor/type-resolver" />
+      <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/phpstan/phpdoc-parser" />
+      <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/psr/http-factory" />
+      <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/psr/http-message" />
+      <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/symfony/property-access" />
+      <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/symfony/property-info" />
+      <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/symfony/type-info" />
+      <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/webmozart/assert" />
+      <excludeFolder url="file://$MODULE_DIR$/symfony/vendor/symfony/doctrine-messenger" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

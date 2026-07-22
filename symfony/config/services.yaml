@@ -23,8 +23,16 @@ services:
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 
-    Smi2\ClickHouse\Client:
+    ClickHouseDB\Client:
         factory: [ App\Infrastructure\ClickHouse\ClickHouseFactory, create ]
+
+    App\Infrastructure\ClickHouse\Repository\AnalyticMatchAnalyticsRepository:
+        arguments:
+            $clickhouse: '@ClickHouseDB\Client'
+
+    Histel951\Dota2Api\Client\Dota2ApiClient:
+        autowire: true
+        lazy: false
 
     App\Infrastructure\Kafka\Config\KafkaTopicsConfig:
         arguments:

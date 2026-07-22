@@ -8,13 +8,10 @@ use Histel951\Dota2Api\Domain\Common\ValueObjects\Duration;
 use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
 use Histel951\Dota2Api\Domain\Entities\Match\MatchDetail;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TeamSide;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\MatchStartTime;
 
 final readonly class PlayerMatchExtractor
 {
-    /**
-     * @param MatchDetail $matchDetail
-     * @return PlayerMatchStats[]
-     */
     public function extract(MatchDetail $matchDetail): array
     {
         $winner = $matchDetail->getResult()->getWinner();
@@ -22,17 +19,17 @@ final readonly class PlayerMatchExtractor
         $id = $matchDetail->getId();
         $duration = $matchDetail->getDuration();
 
-        $result = [];
-        foreach ([$winner, $loser] as $side) {
-            $result = array_merge($this->extractMatchStats($side, $id, $duration), $result);
-        }
-
-        return $result;
+        return array_merge(
+            $this->extractMatchStats($winner, $id, $duration, $matchDetail->getStartTime()),
+            $this->extractMatchStats($loser, $id, $duration, $matchDetail->getStartTime())
+        );
     }
 
-    private function extractMatchStats(TeamSide $teamSide, MatchId $matchId, Duration $duration): array
+    private function extractMatchStats(TeamSide $teamSide, MatchId $matchId, Duration $duration, MatchStartTime $startTime): array
     {
         $result = [];
+        $isWin = $teamSide->isWon();
+
         foreach ($teamSide->getPlayers()->getValue() as $player) {
             $result[] = new PlayerMatchStats(
                 matchId: $matchId,
@@ -43,6 +40,36 @@ final readonly class PlayerMatchExtractor
                 kills: $player->getKda()->getKills(),
                 deaths: $player->getKda()->getDeaths(),
                 assists: $player->getKda()->getAssists(),
+                gpm: $player->getEconomy()->getGPM(),
+                xpm: $player->getEconomy()->getXPM(),
+                netWorth: $player->getEconomy()->getNetWorth(),
+                totalGold: $player->getEconomy()->getTotalGold(),
+                totalXp: $player->getEconomy()->getTotalXp(),
+                goldSpend: $player->getEconomy()->getGoldSpent(),
+                creepsLastHits: $player->getCreeps()->getLastHits(),
+                creepsLaneLastHits: $player->getCreeps()->getLaneCreeps(),
+                creepsDenies: $player->getCreeps()->getDenies(),
+                creepsNeutrals: $player->getCreeps()->getNeutralCreeps(),
+                creepsAncients: $player->getCreeps()->getAncientCreeps(),
+                roshanKills: $player->getObjectives()->getRoshanKills(),
+                towerKills: $player->getObjectives()->getTowerKills(),
+                runePickups: $player->getObjectives()->getRunePickups(),
+                observersPlaced: $player->getWarding()->getObserversPlaced(),
+                observersDestroyed: $player->getWarding()->getObserversDestroyed(),
+                sentryPlaced: $player->getWarding()->getSentryPlaced(),
+                sentryDestroyed: $player->getWarding()->getSentryDestroyed(),
+                heroDamage: $player->getDamage()->getHeroDamage(),
+                towerDamage: $player->getDamage()->getTowerDamage(),
+                heroHealing: $player->getDamage()->getHeroHealing(),
+                buybackCount: $player->getUtility()->getBuybackCount(),
+                firstBloodClaimed: $player->getUtility()->isFirstBloodClaimed(),
+                courierKills: $player->getUtility()->getCourierKills(),
+                stuns: $player->getUtility()->getStuns(),
+                teamfightParticipation: $player->getUtility()->getTeamfightParticipation(),
+                side: $teamSide->getSide(),
+                win: $isWin,
+                role: $player->getRole(),
+                startTime: $startTime->getValue(),
             );
         }
 

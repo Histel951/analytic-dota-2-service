@@ -87,11 +87,9 @@ final readonly class PlayerMatchStats
         private Side $side,
         private bool $win,
 
-        private Lane $lane,
         private Role $role,
 
         private DateTimeImmutable $startTime,
-        private DateTimeImmutable $createdAt,
     ) {
     }
 
@@ -275,11 +273,6 @@ final readonly class PlayerMatchStats
         return $this->win;
     }
 
-    public function getLane(): Lane
-    {
-        return $this->lane;
-    }
-
     public function getRole(): Role
     {
         return $this->role;
@@ -288,10 +281,5 @@ final readonly class PlayerMatchStats
     public function getStartTime(): DateTimeImmutable
     {
         return $this->startTime;
-    }
-
-    public function getCreatedAt(): DateTimeImmutable
-    {
-        return $this->createdAt;
     }
 }

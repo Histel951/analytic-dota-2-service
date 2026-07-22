@@ -1,0 +1,12 @@
+event_driven_kafka_transport:
+  consumer:
+    commit_async: true          # Асинхронный коммит оффсетов (лучше для производительности)
+    consume_timeout_ms: 500     # Таймаут ожидания сообщений (мс)
+    config:
+      group.id: 'matches-parser'
+      auto.offset.reset: 'earliest'
+      enable.auto.commit: 'false'
+  producer:
+    config:
+    # Для producer можно добавить специфичные настройки при необходимости
+    # enable.idempotence: 'false'

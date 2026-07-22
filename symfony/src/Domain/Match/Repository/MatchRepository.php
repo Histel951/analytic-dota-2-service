@@ -2,7 +2,9 @@
 
 namespace App\Domain\Match\Repository;
 
+use App\Domain\Match\Entity\MatchEntity;
+
 interface MatchRepository
 {
-    public function insert(): void;
+    public function save(MatchEntity $entity): void;
 }
