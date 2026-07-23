@@ -1,5 +1,5 @@
 <?php
-namespace App\Command;
+namespace App\UI\Console\Match;
 
 use App\Application\Match\Message\ParseMatchMessage;
 use Symfony\Component\Console\Attribute\Argument;
