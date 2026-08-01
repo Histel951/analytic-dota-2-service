@@ -5,6 +5,7 @@ namespace App\Domain\Match\Entity;
 
 use DateTimeImmutable;
 use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
+use Histel951\Dota2Api\Domain\Common\ValueObjects\Region;
 
 final class MatchEntity
 {
@@ -13,6 +14,7 @@ final class MatchEntity
         private readonly DateTimeImmutable $startTime,
         private readonly int               $duration,
         private readonly bool              $radiantWin,
+        private readonly ?Region           $region = null,
         private ?DateTimeImmutable         $createdAt = null,
     )
     {
@@ -42,6 +44,11 @@ final class MatchEntity
     public function getCreatedAt(): DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    public function getRegion(): ?Region
+    {
+        return $this->region;
     }
 
     public function isLongMatch(int $thresholdSeconds = 3600): bool
