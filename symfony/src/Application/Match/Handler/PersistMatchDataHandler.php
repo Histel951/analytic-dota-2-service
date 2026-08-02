@@ -11,6 +11,7 @@ use App\Domain\Match\Repository\MatchPlayersRepository;
 use App\Domain\Match\Repository\MatchProcessingRepository;
 use App\Domain\Match\Repository\MatchRepository;
 use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
+use Histel951\Dota2Api\Domain\Common\ValueObjects\Region;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -35,11 +36,14 @@ final readonly class PersistMatchDataHandler
         try {
             $matchDetail = $message->getMatchDetail();
 
+            $regionId = $matchDetail->getRegion()?->getId();
+
             $newMatch = new MatchEntity(
                 matchId: $matchId,
                 startTime: $matchDetail->getStartTime()->getValue(),
                 duration: $matchDetail->getDuration()->getSeconds(),
                 radiantWin: $matchDetail->getRadiant()->isWon(),
+                region: $regionId ? Region::fromId($regionId) : null,
             );
             $this->matchRepository->save($newMatch);
 

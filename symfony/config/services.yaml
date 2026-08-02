@@ -37,9 +37,26 @@ services:
     App\Domain\PlayerStats\Repository\PlayerStatsReadRepository:
         alias: App\Infrastructure\ClickHouse\Repository\ClickHousePlayerStatsReadRepository
 
+    App\Infrastructure\ClickHouse\Repository\ClickHouseTeamFormAnalysisRepository:
+        arguments:
+            $clickHouseFactory: '@App\Infrastructure\ClickHouse\ClickHouseFactory'
+
+    App\Domain\Team\Repository\TeamFormAnalysisRepository:
+        alias: App\Infrastructure\ClickHouse\Repository\ClickHouseTeamFormAnalysisRepository
+
+    App\Infrastructure\Postgres\Repository\PsqlTeamMatchRepository:
+        arguments:
+            $connection: '@doctrine.dbal.default_connection'
+
+    App\Domain\Team\Repository\TeamMatchRepository:
+        alias: App\Infrastructure\Postgres\Repository\PsqlTeamMatchRepository
+
     Histel951\Dota2Api\Client\Dota2ApiClient:
         autowire: true
         lazy: false
+
+    Histel951\Dota2Api\Domain\Services\RegionResolverInterface:
+        class: Histel951\Dota2Api\Infrastructure\Services\RegionResolver
 
     App\Infrastructure\Kafka\Config\KafkaTopicsConfig:
         arguments:

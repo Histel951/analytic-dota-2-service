@@ -5,6 +5,8 @@ namespace App\Application\Team\Service;
 
 use App\Application\Match\Message\ParseMatchMessage;
 use App\Application\Team\Exception\InvalidDateRangeException;
+use App\Domain\Team\Entity\TeamMatch;
+use App\Domain\Team\Repository\TeamMatchRepository;
 use DateTimeImmutable;
 use Histel951\Dota2Api\Client\Dota2ApiClient;
 use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
@@ -16,6 +18,7 @@ final readonly class FetchTeamMatchesService
     public function __construct(
         private Dota2ApiClient $dota2ApiClient,
         private MessageBusInterface $messageBus,
+        private TeamMatchRepository $teamMatchRepository,
         private LoggerInterface $logger,
     ) {}
 
@@ -46,6 +49,7 @@ final readonly class FetchTeamMatchesService
 
             $processedCount = 0;
             $skippedCount = 0;
+            $teamMatchEntities = [];
 
             foreach ($teamMatches as $index => $match) {
                 try {
@@ -61,10 +65,18 @@ final readonly class FetchTeamMatchesService
                     
                     $this->messageBus->dispatch(new ParseMatchMessage($matchId));
                     
+                    $teamMatchEntity = new TeamMatch(
+                        teamId: new TeamId($teamId),
+                        matchId: $match->getMatchId(),
+                        isWin: $match->matchOutcome()->isWon(),
+                    );
+                    $teamMatchEntities[] = $teamMatchEntity;
+                    
                     $this->logger->debug('Match dispatched for processing', [
                         'match_id' => $matchId,
                         'team_id' => $teamId,
                         'match_start_time' => $match->getStartTime()->format('Y-m-d H:i:s'),
+                        'is_win' => $match->matchOutcome()->isWon(),
                     ]);
 
                     $processedCount++;
@@ -81,6 +93,15 @@ final readonly class FetchTeamMatchesService
                     
                     continue;
                 }
+            }
+
+            if (!empty($teamMatchEntities)) {
+                $this->teamMatchRepository->saveBulk($teamMatchEntities);
+                
+                $this->logger->info('Team-match relations saved', [
+                    'team_id' => $teamId,
+                    'relations_count' => count($teamMatchEntities),
+                ]);
             }
 
             $this->logger->info('Team matches dispatched successfully', [
