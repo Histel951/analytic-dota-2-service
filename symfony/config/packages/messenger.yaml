@@ -36,6 +36,8 @@ framework:
                 - async
             'App\Application\Match\Message\MatchAnalyticsProcessedMessage':
                 - async
+            'App\Application\Match\Message\MatchFantasyCalculateMessage':
+                - async
             'App\Application\Match\Message\MatchFailedMessage':
                 - async
             'App\Application\Match\Message\MatchFailedKafkaMessage':

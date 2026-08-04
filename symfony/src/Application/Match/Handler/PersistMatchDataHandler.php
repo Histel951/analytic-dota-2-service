@@ -5,6 +5,7 @@ namespace App\Application\Match\Handler;
 
 use App\Application\Match\Message\MatchAnalyticsProcessedMessage;
 use App\Application\Match\Message\MatchFailedMessage;
+use App\Application\Match\Message\MatchFantasyCalculateMessage;
 use App\Domain\Match\Entity\MatchEntity;
 use App\Domain\Match\Entity\MatchPlayers;
 use App\Domain\Match\Repository\MatchPlayersRepository;
@@ -58,11 +59,12 @@ final readonly class PersistMatchDataHandler
             }
             $this->playersRepository->saveMatchPlayersBulk($players);
 
-            $processing = $this->processingRepository->findByMatchId($matchId);
-            if ($processing !== null) {
-                $processing = $processing->markAsCompleted();
-                $this->processingRepository->update($processing);
-            }
+            $this->messageBus->dispatch(
+                new MatchFantasyCalculateMessage(
+                    matchId: $message->getMatchId(),
+                    serializedMatchDetail: $message->getSerializedMatchDetail()
+                )
+            );
 
             $this->logger->info('Match data persisted successfully', [
                 'match_id' => $message->getMatchId(),

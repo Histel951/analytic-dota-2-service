@@ -30,6 +30,16 @@ services:
         arguments:
             $clickhouse: '@ClickHouseDB\Client'
 
+    App\Domain\Match\Repository\AnalyticMatchRepository:
+        alias: App\Infrastructure\ClickHouse\Repository\AnalyticMatchAnalyticsRepository
+
+    App\Infrastructure\ClickHouse\Repository\ClickHouseFantasyStatsRepository:
+        arguments:
+            $clickhouse: '@ClickHouseDB\Client'
+
+    App\Domain\Match\Repository\FantasyStatsRepository:
+        alias: App\Infrastructure\ClickHouse\Repository\ClickHouseFantasyStatsRepository
+
     App\Infrastructure\ClickHouse\Repository\ClickHousePlayerStatsReadRepository:
         arguments:
             $clickhouse: '@ClickHouseDB\Client'

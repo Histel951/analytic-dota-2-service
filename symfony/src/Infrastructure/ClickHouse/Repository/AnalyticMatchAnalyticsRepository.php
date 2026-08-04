@@ -6,6 +6,41 @@ namespace App\Infrastructure\ClickHouse\Repository;
 use App\Domain\Match\Entity\PlayerMatchStats;
 use App\Domain\Match\Repository\AnalyticMatchRepository;
 use ClickHouseDB\Client;
+use DateTimeImmutable;
+use Histel951\Dota2Api\Domain\Common\Enums\PlayerRole;
+use Histel951\Dota2Api\Domain\Common\ValueObjects\Duration;
+use Histel951\Dota2Api\Domain\Common\ValueObjects\GoldSpent;
+use Histel951\Dota2Api\Domain\Common\ValueObjects\GPM;
+use Histel951\Dota2Api\Domain\Common\ValueObjects\HeroId;
+use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
+use Histel951\Dota2Api\Domain\Common\ValueObjects\NetWorth;
+use Histel951\Dota2Api\Domain\Common\ValueObjects\PlayerId;
+use Histel951\Dota2Api\Domain\Common\ValueObjects\Role;
+use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
+use Histel951\Dota2Api\Domain\Common\ValueObjects\TotalGold;
+use Histel951\Dota2Api\Domain\Common\ValueObjects\TotalXP;
+use Histel951\Dota2Api\Domain\Common\ValueObjects\XPM;
+use Histel951\Dota2Api\Domain\Entities\Match\Enums\Side;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\AncientCreeps;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\BuybackCount;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\CampsStacked;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\CourierKills;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\Denies;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\HeroDamage;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\HeroHealing;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\LaneCreeps;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\LastHits;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\NeutralCreeps;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserversDestroyed;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserversPlaced;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\RoshanKills;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\RunePickups;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SentryDestroyed;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SentryPlaced;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\Stuns;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TeamfightParticipation;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TowerDamage;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TowerKills;
 
 final readonly class AnalyticMatchAnalyticsRepository implements AnalyticMatchRepository
 {
@@ -136,5 +171,76 @@ final readonly class AnalyticMatchAnalyticsRepository implements AnalyticMatchRe
 
             'start_time' => $match->getStartTime()->format('Y-m-d H:i:s'),
         ];
+    }
+
+    /**
+     * @param MatchId $matchId
+     * @return PlayerMatchStats[]
+     */
+    public function getPlayerStatsByMatchId(MatchId $matchId): array
+    {
+        $query = "SELECT * FROM player_match_stats WHERE match_id = :match_id";
+        
+        $statement = $this->clickhouse->select($query, [
+            'match_id' => $matchId->getValue(),
+        ]);
+
+        $rows = $statement->rows();
+        
+        if (empty($rows)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($rows as $row) {
+            $result[] = $this->mapRowToPlayerMatchStats($row);
+        }
+
+        return $result;
+    }
+
+    private function mapRowToPlayerMatchStats(array $row): PlayerMatchStats
+    {
+        return new PlayerMatchStats(
+            matchId: new MatchId($row['match_id']),
+            duration: Duration::fromSeconds($row['duration']),
+            playerId: new PlayerId($row['player_id']),
+            openDotaHeroId: new HeroId($row['opendota_hero_id']),
+            openDotaTeamId: new TeamId($row['opendota_team_id']),
+            kills: (int)$row['kills'],
+            deaths: (int)$row['deaths'],
+            assists: (int)$row['assists'],
+            gpm: new GPM($row['gpm']),
+            xpm: new XPM($row['xpm']),
+            netWorth: new NetWorth($row['net_worth']),
+            totalGold: new TotalGold($row['total_gold']),
+            totalXp: new TotalXP($row['total_xp']),
+            goldSpend: new GoldSpent($row['gold_spend']),
+            creepsLastHits: new LastHits($row['creeps_last_hits']),
+            creepsLaneLastHits: new LaneCreeps($row['creeps_lane_last_hits']),
+            creepsDenies: new Denies($row['creeps_denies']),
+            creepsNeutrals: new NeutralCreeps($row['creeps_neutrals']),
+            creepsAncients: new AncientCreeps($row['creeps_ancients']),
+            campsStacked: new CampsStacked($row['camps_stacked']),
+            roshanKills: new RoshanKills($row['roshan_kills']),
+            towerKills: new TowerKills($row['tower_kills']),
+            runePickups: new RunePickups($row['rune_pickups']),
+            observersPlaced: new ObserversPlaced($row['observers_placed']),
+            observersDestroyed: new ObserversDestroyed($row['observers_destroyed']),
+            sentryPlaced: new SentryPlaced($row['sentry_placed']),
+            sentryDestroyed: new SentryDestroyed($row['sentry_destroyed']),
+            heroDamage: new HeroDamage($row['hero_damage']),
+            towerDamage: new TowerDamage($row['tower_damage']),
+            heroHealing: new HeroHealing($row['hero_healing']),
+            buybackCount: new BuybackCount($row['buyback_count']),
+            firstBloodClaimed: (bool)$row['first_blood_claimed'],
+            courierKills: new CourierKills($row['courier_kills']),
+            stuns: new Stuns($row['stuns']),
+            teamfightParticipation: new TeamfightParticipation($row['teamfight_participation']),
+            side: Side::from((int)$row['side']),
+            win: (bool)$row['win'],
+            role: new Role(PlayerRole::from($row['role'])),
+            startTime: new DateTimeImmutable($row['start_time']),
+        );
     }
 }

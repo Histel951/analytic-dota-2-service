@@ -73,6 +73,13 @@ final class MatchProcessing
         return $this;
     }
 
+    public function markProcessingFantasy(): self
+    {
+        $this->status = MatchProcessingStatus::PROCESSING_FANTASY;
+
+        return $this;
+    }
+
     public function markFantasyProcessed(): self
     {
         $this->fantasyProcessedAt = new DateTimeImmutable();
