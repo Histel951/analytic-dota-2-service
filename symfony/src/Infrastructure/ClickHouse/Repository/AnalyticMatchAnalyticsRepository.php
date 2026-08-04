@@ -33,6 +33,7 @@ final readonly class AnalyticMatchAnalyticsRepository implements AnalyticMatchRe
         'creeps_denies',
         'creeps_neutrals',
         'creeps_ancients',
+        'camps_stacked',
         'roshan_kills',
         'tower_kills',
         'rune_pickups',
@@ -106,6 +107,7 @@ final readonly class AnalyticMatchAnalyticsRepository implements AnalyticMatchRe
             'creeps_denies' => $match->getCreepsDenies()->getValue(),
             'creeps_neutrals' => $match->getCreepsNeutrals()->getValue(),
             'creeps_ancients' => $match->getCreepsAncients()->getValue(),
+            'camps_stacked' => $match->getCampsStacked()->getValue(),
 
             'roshan_kills' => $match->getRoshanKills()->getValue(),
             'tower_kills' => $match->getTowerKills()->getValue(),

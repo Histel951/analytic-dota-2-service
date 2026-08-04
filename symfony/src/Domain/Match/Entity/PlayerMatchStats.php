@@ -20,6 +20,7 @@ use Histel951\Dota2Api\Domain\Entities\Match\Enums\Lane;
 use Histel951\Dota2Api\Domain\Entities\Match\Enums\Side;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\AncientCreeps;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\BuybackCount;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\CampsStacked;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\CourierKills;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\Denies;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\HeroDamage;
@@ -64,6 +65,7 @@ final readonly class PlayerMatchStats
         private Denies $creepsDenies,
         private NeutralCreeps $creepsNeutrals,
         private AncientCreeps $creepsAncients,
+        private CampsStacked $campsStacked,
 
         private RoshanKills $roshanKills,
         private TowerKills $towerKills,
@@ -186,6 +188,11 @@ final readonly class PlayerMatchStats
     public function getCreepsAncients(): AncientCreeps
     {
         return $this->creepsAncients;
+    }
+
+    public function getCampsStacked(): CampsStacked
+    {
+        return $this->campsStacked;
     }
 
     public function getRoshanKills(): RoshanKills

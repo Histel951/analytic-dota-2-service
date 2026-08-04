@@ -51,6 +51,7 @@ final readonly class PlayerMatchExtractor
                 creepsDenies: $player->getCreeps()->getDenies(),
                 creepsNeutrals: $player->getCreeps()->getNeutralCreeps(),
                 creepsAncients: $player->getCreeps()->getAncientCreeps(),
+                campsStacked: $player->getCreeps()->getCampsStacked(),
                 roshanKills: $player->getObjectives()->getRoshanKills(),
                 towerKills: $player->getObjectives()->getTowerKills(),
                 runePickups: $player->getObjectives()->getRunePickups(),
