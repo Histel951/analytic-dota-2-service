@@ -59,6 +59,9 @@ services:
     App\Domain\Match\Repository\FantasyStatsRepository:
         alias: App\Infrastructure\ClickHouse\Repository\ClickHouseFantasyStatsRepository
 
+    App\Domain\Match\Repository\FantasyStatsReadRepository:
+        alias: App\Infrastructure\ClickHouse\Repository\ClickHouseFantasyStatsRepository
+
     App\Infrastructure\ClickHouse\Repository\ClickHousePlayerStatsReadRepository:
         arguments:
             $clickhouse: '@ClickHouseDB\Client'
