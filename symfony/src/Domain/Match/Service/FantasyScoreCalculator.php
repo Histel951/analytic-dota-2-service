@@ -72,7 +72,8 @@ final readonly class FantasyScoreCalculator
 
     private function calculateDeathsScore(int $deaths): float
     {
-        return $this->config->deathsBase - ($deaths * $this->config->deathsPenalty);
+        $score = $this->config->deathsBase - ($deaths * $this->config->deathsPenalty);
+        return max(0, $score);
     }
 
     private function calculateCreepsScore(int $lastHits, int $denies): float
