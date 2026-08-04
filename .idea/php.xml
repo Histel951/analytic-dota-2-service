@@ -88,9 +88,11 @@
       <path value="$PROJECT_DIR$/symfony/vendor/symfony/property-access" />
       <path value="$PROJECT_DIR$/symfony/vendor/symfony/type-info" />
       <path value="$PROJECT_DIR$/symfony/vendor/symfony/doctrine-messenger" />
+      <path value="$PROJECT_DIR$/symfony/vendor/symfony/validator" />
+      <path value="$PROJECT_DIR$/symfony/vendor/symfony/translation-contracts" />
     </include_path>
   </component>
-  <component name="PhpProjectSharedConfiguration" php_language_level="8.2" />
+  <component name="PhpProjectSharedConfiguration" php_language_level="8.3" />
   <component name="PhpStanOptionsConfiguration">
     <option name="transferred" value="true" />
   </component>

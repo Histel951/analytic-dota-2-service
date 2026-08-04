@@ -16,10 +16,10 @@ use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
 use Histel951\Dota2Api\Domain\Common\ValueObjects\TotalGold;
 use Histel951\Dota2Api\Domain\Common\ValueObjects\TotalXP;
 use Histel951\Dota2Api\Domain\Common\ValueObjects\XPM;
-use Histel951\Dota2Api\Domain\Entities\Match\Enums\Lane;
 use Histel951\Dota2Api\Domain\Entities\Match\Enums\Side;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\AncientCreeps;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\BuybackCount;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\CampsStacked;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\CourierKills;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\Denies;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\HeroDamage;
@@ -29,12 +29,15 @@ use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\LastHits;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\NeutralCreeps;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserversDestroyed;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserversPlaced;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserverTakeovers;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\RoshanKills;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\RunePickups;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SentryDestroyed;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SentryPlaced;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SmokeUses;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\Stuns;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TeamfightParticipation;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TormentorKills;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TowerDamage;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TowerKills;
 
@@ -64,15 +67,18 @@ final readonly class PlayerMatchStats
         private Denies $creepsDenies,
         private NeutralCreeps $creepsNeutrals,
         private AncientCreeps $creepsAncients,
+        private CampsStacked $campsStacked,
 
         private RoshanKills $roshanKills,
         private TowerKills $towerKills,
         private RunePickups $runePickups,
+        private TormentorKills $tormentorKills,
 
         private ObserversPlaced $observersPlaced,
         private ObserversDestroyed $observersDestroyed,
         private SentryPlaced $sentryPlaced,
         private SentryDestroyed $sentryDestroyed,
+        private ObserverTakeovers $observerTakeovers,
 
         private HeroDamage $heroDamage,
         private TowerDamage $towerDamage,
@@ -83,6 +89,7 @@ final readonly class PlayerMatchStats
         private CourierKills $courierKills,
         private Stuns $stuns,
         private TeamfightParticipation $teamfightParticipation,
+        private SmokeUses $smokeUses,
 
         private Side $side,
         private bool $win,
@@ -188,6 +195,11 @@ final readonly class PlayerMatchStats
         return $this->creepsAncients;
     }
 
+    public function getCampsStacked(): CampsStacked
+    {
+        return $this->campsStacked;
+    }
+
     public function getRoshanKills(): RoshanKills
     {
         return $this->roshanKills;
@@ -201,6 +213,11 @@ final readonly class PlayerMatchStats
     public function getRunePickups(): RunePickups
     {
         return $this->runePickups;
+    }
+
+    public function getTormentorKills(): TormentorKills
+    {
+        return $this->tormentorKills;
     }
 
     public function getObserversPlaced(): ObserversPlaced
@@ -221,6 +238,11 @@ final readonly class PlayerMatchStats
     public function getSentryDestroyed(): SentryDestroyed
     {
         return $this->sentryDestroyed;
+    }
+
+    public function getObserverTakeovers(): ObserverTakeovers
+    {
+        return $this->observerTakeovers;
     }
 
     public function getHeroDamage(): HeroDamage
@@ -261,6 +283,11 @@ final readonly class PlayerMatchStats
     public function getTeamfightParticipation(): TeamfightParticipation
     {
         return $this->teamfightParticipation;
+    }
+
+    public function getSmokeUses(): SmokeUses
+    {
+        return $this->smokeUses;
     }
 
     public function getSide(): Side
