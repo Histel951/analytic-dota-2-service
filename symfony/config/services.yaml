@@ -4,6 +4,22 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    # Fantasy Score Calculation Configuration (The International 2026)
+    fantasy_scoring.kills_multiplier: 107
+    fantasy_scoring.deaths_base: 1950
+    fantasy_scoring.deaths_penalty: 195
+    fantasy_scoring.creeps_multiplier: 3
+    fantasy_scoring.gpm_multiplier: 2
+    fantasy_scoring.tower_multiplier: 352
+    fantasy_scoring.observer_multiplier: 117
+    fantasy_scoring.stacks_multiplier: 234
+    fantasy_scoring.rune_multiplier: 141
+    fantasy_scoring.roshan_multiplier: 1172
+    fantasy_scoring.courier_multiplier: 703
+    fantasy_scoring.stun_multiplier: 10
+    fantasy_scoring.first_blood_bonus: 1934
+    fantasy_scoring.teamfight_multiplier: 2124
+    fantasy_scoring.teamfight_max_score: 2124
 
 services:
     # default configuration for services in *this* file
@@ -60,6 +76,29 @@ services:
 
     App\Domain\Team\Repository\TeamMatchRepository:
         alias: App\Infrastructure\Postgres\Repository\PsqlTeamMatchRepository
+
+    # Fantasy Scoring Configuration
+    App\Domain\Match\ValueObject\FantasyScoringConfig:
+        arguments:
+            $killsMultiplier: '%fantasy_scoring.kills_multiplier%'
+            $deathsBase: '%fantasy_scoring.deaths_base%'
+            $deathsPenalty: '%fantasy_scoring.deaths_penalty%'
+            $creepsMultiplier: '%fantasy_scoring.creeps_multiplier%'
+            $gpmMultiplier: '%fantasy_scoring.gpm_multiplier%'
+            $towerMultiplier: '%fantasy_scoring.tower_multiplier%'
+            $observerMultiplier: '%fantasy_scoring.observer_multiplier%'
+            $stacksMultiplier: '%fantasy_scoring.stacks_multiplier%'
+            $runeMultiplier: '%fantasy_scoring.rune_multiplier%'
+            $roshanMultiplier: '%fantasy_scoring.roshan_multiplier%'
+            $courierMultiplier: '%fantasy_scoring.courier_multiplier%'
+            $stunMultiplier: '%fantasy_scoring.stun_multiplier%'
+            $firstBloodBonus: '%fantasy_scoring.first_blood_bonus%'
+            $teamfightMultiplier: '%fantasy_scoring.teamfight_multiplier%'
+            $teamfightMaxScore: '%fantasy_scoring.teamfight_max_score%'
+
+    App\Domain\Match\Service\FantasyScoreCalculator:
+        arguments:
+            $config: '@App\Domain\Match\ValueObject\FantasyScoringConfig'
 
     Histel951\Dota2Api\Client\Dota2ApiClient:
         autowire: true

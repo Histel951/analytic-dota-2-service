@@ -5,24 +5,14 @@ namespace App\Domain\Match\Service;
 
 use App\Domain\Match\Dto\FantasyScoreResult;
 use App\Domain\Match\Entity\PlayerMatchStats;
+use App\Domain\Match\ValueObject\FantasyScoringConfig;
 
 final readonly class FantasyScoreCalculator
 {
-    private const KILLS_MULTIPLIER = 107;
-    private const DEATHS_BASE = 1950;
-    private const DEATHS_PENALTY = 195;
-    private const CREEPS_MULTIPLIER = 3;
-    private const GPM_MULTIPLIER = 2;
-    private const TOWER_MULTIPLIER = 352;
-    private const OBSERVER_MULTIPLIER = 117;
-    private const STACKS_MULTIPLIER = 234;
-    private const RUNE_MULTIPLIER = 141;
-    private const ROSHAN_MULTIPLIER = 1172;
-    private const COURIER_MULTIPLIER = 703;
-    private const STUN_MULTIPLIER = 10;
-    private const FIRST_BLOOD_BONUS = 1934;
-    private const TEAMFIGHT_MULTIPLIER = 2124;
-    private const TEAMFIGHT_MAX_SCORE = 2124;
+    public function __construct(
+        private FantasyScoringConfig $config,
+    ) {
+    }
 
     public function calculate(PlayerMatchStats $stats): FantasyScoreResult
     {
@@ -77,67 +67,67 @@ final readonly class FantasyScoreCalculator
 
     private function calculateKillsScore(int $kills): float
     {
-        return $kills * self::KILLS_MULTIPLIER;
+        return $kills * $this->config->killsMultiplier;
     }
 
     private function calculateDeathsScore(int $deaths): float
     {
-        return self::DEATHS_BASE - ($deaths * self::DEATHS_PENALTY);
+        return $this->config->deathsBase - ($deaths * $this->config->deathsPenalty);
     }
 
     private function calculateCreepsScore(int $lastHits, int $denies): float
     {
-        return ($lastHits + $denies) * self::CREEPS_MULTIPLIER;
+        return ($lastHits + $denies) * $this->config->creepsMultiplier;
     }
 
     private function calculateGpmScore(int $gpm): float
     {
-        return $gpm * self::GPM_MULTIPLIER;
+        return $gpm * $this->config->gpmMultiplier;
     }
 
     private function calculateTowerScore(int $towerKills): float
     {
-        return $towerKills * self::TOWER_MULTIPLIER;
+        return $towerKills * $this->config->towerMultiplier;
     }
 
     private function calculateObserverScore(int $observersPlaced): float
     {
-        return $observersPlaced * self::OBSERVER_MULTIPLIER;
+        return $observersPlaced * $this->config->observerMultiplier;
     }
 
     private function calculateStacksScore(int $campsStacked): float
     {
-        return $campsStacked * self::STACKS_MULTIPLIER;
+        return $campsStacked * $this->config->stacksMultiplier;
     }
 
     private function calculateRuneScore(int $runePickups): float
     {
-        return $runePickups * self::RUNE_MULTIPLIER;
+        return $runePickups * $this->config->runeMultiplier;
     }
 
     private function calculateRoshanScore(int $roshanKills): float
     {
-        return $roshanKills * self::ROSHAN_MULTIPLIER;
+        return $roshanKills * $this->config->roshanMultiplier;
     }
 
     private function calculateCourierScore(int $courierKills): float
     {
-        return $courierKills * self::COURIER_MULTIPLIER;
+        return $courierKills * $this->config->courierMultiplier;
     }
 
     private function calculateStunScore(float $stuns): float
     {
-        return $stuns * self::STUN_MULTIPLIER;
+        return $stuns * $this->config->stunMultiplier;
     }
 
     private function calculateFirstBloodScore(bool $firstBloodClaimed): float
     {
-        return $firstBloodClaimed ? self::FIRST_BLOOD_BONUS : 0.0;
+        return $firstBloodClaimed ? $this->config->firstBloodBonus : 0.0;
     }
 
     private function calculateTeamfightScore(float $teamfightParticipation): float
     {
-        $score = $teamfightParticipation * self::TEAMFIGHT_MULTIPLIER;
-        return min($score, self::TEAMFIGHT_MAX_SCORE);
+        $score = $teamfightParticipation * $this->config->teamfightMultiplier;
+        return min($score, $this->config->teamfightMaxScore);
     }
 }
