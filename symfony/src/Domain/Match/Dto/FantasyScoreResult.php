@@ -19,6 +19,9 @@ final readonly class FantasyScoreResult
         public float $stunScore,
         public float $firstBloodScore,
         public float $teamfightScore,
+        public float $tormentorScore,
+        public float $smokeScore,
+        public float $watcherScore,
         public float $totalScore,
     ) {
     }

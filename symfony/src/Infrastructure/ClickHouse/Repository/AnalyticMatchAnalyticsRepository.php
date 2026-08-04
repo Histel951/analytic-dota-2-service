@@ -33,12 +33,15 @@ use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\LastHits;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\NeutralCreeps;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserversDestroyed;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserversPlaced;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserverTakeovers;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\RoshanKills;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\RunePickups;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SentryDestroyed;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SentryPlaced;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SmokeUses;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\Stuns;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TeamfightParticipation;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TormentorKills;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TowerDamage;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TowerKills;
 
@@ -72,10 +75,12 @@ final readonly class AnalyticMatchAnalyticsRepository implements AnalyticMatchRe
         'roshan_kills',
         'tower_kills',
         'rune_pickups',
+        'tormentor_kills',
         'observers_placed',
         'observers_destroyed',
         'sentry_placed',
         'sentry_destroyed',
+        'observer_takeovers',
         'hero_damage',
         'tower_damage',
         'hero_healing',
@@ -84,6 +89,7 @@ final readonly class AnalyticMatchAnalyticsRepository implements AnalyticMatchRe
         'courier_kills',
         'stuns',
         'teamfight_participation',
+        'smoke_uses',
         'side',
         'win',
         'lane',
@@ -147,11 +153,13 @@ final readonly class AnalyticMatchAnalyticsRepository implements AnalyticMatchRe
             'roshan_kills' => $match->getRoshanKills()->getValue(),
             'tower_kills' => $match->getTowerKills()->getValue(),
             'rune_pickups' => $match->getRunePickups()->getValue(),
+            'tormentor_kills' => $match->getTormentorKills()->getValue(),
 
             'observers_placed' => $match->getObserversPlaced()->getValue(),
             'observers_destroyed' => $match->getObserversDestroyed()->getValue(),
             'sentry_placed' => $match->getSentryPlaced()->getValue(),
             'sentry_destroyed' => $match->getSentryDestroyed()->getValue(),
+            'observer_takeovers' => $match->getObserverTakeovers()->getValue(),
 
             'hero_damage' => $match->getHeroDamage()->getValue(),
             'tower_damage' => $match->getTowerDamage()->getValue(),
@@ -162,6 +170,7 @@ final readonly class AnalyticMatchAnalyticsRepository implements AnalyticMatchRe
             'courier_kills' => $match->getCourierKills()->getValue(),
             'stuns' => $match->getStuns()->getValue(),
             'teamfight_participation' => $match->getTeamfightParticipation()->getValue(),
+            'smoke_uses' => $match->getSmokeUses()->getValue(),
 
             'side' => $match->getSide()->value,
             'win' => (int)$match->isWin(),
@@ -225,10 +234,12 @@ final readonly class AnalyticMatchAnalyticsRepository implements AnalyticMatchRe
             roshanKills: new RoshanKills($row['roshan_kills']),
             towerKills: new TowerKills($row['tower_kills']),
             runePickups: new RunePickups($row['rune_pickups']),
+            tormentorKills: new TormentorKills($row['tormentor_kills'] ?? 0),
             observersPlaced: new ObserversPlaced($row['observers_placed']),
             observersDestroyed: new ObserversDestroyed($row['observers_destroyed']),
             sentryPlaced: new SentryPlaced($row['sentry_placed']),
             sentryDestroyed: new SentryDestroyed($row['sentry_destroyed']),
+            observerTakeovers: new ObserverTakeovers($row['observer_takeovers'] ?? 0),
             heroDamage: new HeroDamage($row['hero_damage']),
             towerDamage: new TowerDamage($row['tower_damage']),
             heroHealing: new HeroHealing($row['hero_healing']),
@@ -237,6 +248,7 @@ final readonly class AnalyticMatchAnalyticsRepository implements AnalyticMatchRe
             courierKills: new CourierKills($row['courier_kills']),
             stuns: new Stuns($row['stuns']),
             teamfightParticipation: new TeamfightParticipation($row['teamfight_participation']),
+            smokeUses: new SmokeUses($row['smoke_uses'] ?? 0),
             side: Side::from((int)$row['side']),
             win: (bool)$row['win'],
             role: new Role(PlayerRole::from($row['role'])),

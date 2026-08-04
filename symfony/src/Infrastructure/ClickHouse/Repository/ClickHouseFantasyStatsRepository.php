@@ -29,6 +29,9 @@ final readonly class ClickHouseFantasyStatsRepository implements FantasyStatsRep
         'stun_score',
         'first_blood_score',
         'teamfight_score',
+        'tormentor_score',
+        'smoke_score',
+        'watcher_score',
         'total_score',
         'version',
     ];
@@ -93,6 +96,9 @@ final readonly class ClickHouseFantasyStatsRepository implements FantasyStatsRep
             'stun_score' => $score->stunScore,
             'first_blood_score' => (int)$score->firstBloodScore,
             'teamfight_score' => $score->teamfightScore,
+            'tormentor_score' => (int)$score->tormentorScore,
+            'smoke_score' => (int)$score->smokeScore,
+            'watcher_score' => (int)$score->watcherScore,
             'total_score' => $score->totalScore,
             'version' => self::VERSION,
         ];

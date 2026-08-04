@@ -32,6 +32,9 @@ final readonly class FantasyScoreCalculator
         $stunScore = $this->calculateStunScore($stats->getStuns()->getValue());
         $firstBloodScore = $this->calculateFirstBloodScore($stats->isFirstBloodClaimed());
         $teamfightScore = $this->calculateTeamfightScore($stats->getTeamfightParticipation()->getValue());
+        $tormentorScore = $this->calculateTormentorScore($stats->getTormentorKills()->getValue());
+        $smokeScore = $this->calculateSmokeScore($stats->getSmokeUses()->getValue());
+        $watcherScore = $this->calculateWatcherScore($stats->getObserverTakeovers()->getValue());
 
         $totalScore = $killsScore
             + $deathsScore
@@ -45,7 +48,10 @@ final readonly class FantasyScoreCalculator
             + $courierScore
             + $stunScore
             + $firstBloodScore
-            + $teamfightScore;
+            + $teamfightScore
+            + $tormentorScore
+            + $smokeScore
+            + $watcherScore;
 
         return new FantasyScoreResult(
             killsScore: $killsScore,
@@ -61,6 +67,9 @@ final readonly class FantasyScoreCalculator
             stunScore: $stunScore,
             firstBloodScore: $firstBloodScore,
             teamfightScore: $teamfightScore,
+            tormentorScore: $tormentorScore,
+            smokeScore: $smokeScore,
+            watcherScore: $watcherScore,
             totalScore: $totalScore,
         );
     }
@@ -130,5 +139,20 @@ final readonly class FantasyScoreCalculator
     {
         $score = $teamfightParticipation * $this->config->teamfightMultiplier;
         return min($score, $this->config->teamfightMaxScore);
+    }
+
+    private function calculateTormentorScore(int $tormentorKills): float
+    {
+        return $tormentorKills * $this->config->tormentorMultiplier;
+    }
+
+    private function calculateSmokeScore(int $smokeUses): float
+    {
+        return $smokeUses * $this->config->smokeMultiplier;
+    }
+
+    private function calculateWatcherScore(int $observerTakeovers): float
+    {
+        return $observerTakeovers * $this->config->watcherMultiplier;
     }
 }

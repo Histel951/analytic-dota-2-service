@@ -21,6 +21,9 @@ final readonly class FantasyScoringConfig
         public int $firstBloodBonus,
         public int $teamfightMultiplier,
         public int $teamfightMaxScore,
+        public int $tormentorMultiplier,
+        public int $smokeMultiplier,
+        public int $watcherMultiplier,
     ) {
     }
 }

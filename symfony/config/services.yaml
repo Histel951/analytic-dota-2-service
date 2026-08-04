@@ -20,6 +20,9 @@ parameters:
     fantasy_scoring.first_blood_bonus: 1934
     fantasy_scoring.teamfight_multiplier: 2124
     fantasy_scoring.teamfight_max_score: 2124
+    fantasy_scoring.tormentor_multiplier: 879
+    fantasy_scoring.smoke_multiplier: 293
+    fantasy_scoring.watcher_multiplier: 147
 
 services:
     # default configuration for services in *this* file
@@ -95,6 +98,9 @@ services:
             $firstBloodBonus: '%fantasy_scoring.first_blood_bonus%'
             $teamfightMultiplier: '%fantasy_scoring.teamfight_multiplier%'
             $teamfightMaxScore: '%fantasy_scoring.teamfight_max_score%'
+            $tormentorMultiplier: '%fantasy_scoring.tormentor_multiplier%'
+            $smokeMultiplier: '%fantasy_scoring.smoke_multiplier%'
+            $watcherMultiplier: '%fantasy_scoring.watcher_multiplier%'
 
     App\Domain\Match\Service\FantasyScoreCalculator:
         arguments:
