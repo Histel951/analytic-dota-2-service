@@ -33,7 +33,7 @@ use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\LastHits;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\NeutralCreeps;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserversDestroyed;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserversPlaced;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserverTakeovers;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\Watchers;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\RoshanKills;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\RunePickups;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SentryDestroyed;
@@ -239,7 +239,7 @@ final readonly class AnalyticMatchAnalyticsRepository implements AnalyticMatchRe
             observersDestroyed: new ObserversDestroyed($row['observers_destroyed']),
             sentryPlaced: new SentryPlaced($row['sentry_placed']),
             sentryDestroyed: new SentryDestroyed($row['sentry_destroyed']),
-            observerTakeovers: new ObserverTakeovers($row['observer_takeovers'] ?? 0),
+            observerTakeovers: new Watchers($row['observer_takeovers'] ?? 0),
             heroDamage: new HeroDamage($row['hero_damage']),
             towerDamage: new TowerDamage($row['tower_damage']),
             heroHealing: new HeroHealing($row['hero_healing']),

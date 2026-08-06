@@ -68,6 +68,8 @@ final readonly class ExceptionSubscriber implements EventSubscriberInterface
             'trace' => $exception->getTraceAsString(),
         ]);
 
+        throw $exception;
+
         return new ErrorResponse(
             'Internal server error',
             Response::HTTP_INTERNAL_SERVER_ERROR
