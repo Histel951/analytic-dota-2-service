@@ -134,6 +134,25 @@ final readonly class ClickHouseFantasyStatsRepository implements FantasyStatsRep
         );
     }
 
+    /**
+     * @return array<array<string, mixed>>
+     */
+    public function findFantasyStatsByMatchId(int $matchId, int $limit, int $offset): array
+    {
+        $sql = sprintf(
+            'SELECT %s FROM %s WHERE match_id = %d ORDER BY player_id ASC LIMIT %d OFFSET %d',
+            implode(', ', self::COLUMNS),
+            self::TABLE_NAME,
+            $matchId,
+            $limit,
+            $offset
+        );
+
+        $statement = $this->clickhouse->select($sql);
+
+        return $statement->rows();
+    }
+
     private function mapToRow(
         MatchId $matchId,
         PlayerId $playerId,

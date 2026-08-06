@@ -11,8 +11,12 @@ final readonly class GetTopFantasyPlayersUseCase
         private GetTopFantasyPlayersService $service,
     ) {}
 
-    public function execute(int $limit, int $matches, int $offset = 0): array
+    public function execute(int $limit, int $matches, int $offset = 0, ?int $matchId = null): array
     {
+        if ($matchId !== null) {
+            return $this->service->getFantasyStatsByMatchId($matchId, $limit, $offset);
+        }
+
         return array_map(
             fn($player) => $player->toArray(),
             $this->service->getTopFantasyPlayers($limit, $matches, $offset)

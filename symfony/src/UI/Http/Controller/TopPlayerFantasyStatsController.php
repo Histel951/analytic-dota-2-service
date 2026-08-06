@@ -11,7 +11,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
 
-final class PlayerFantasyStatsController extends AbstractController
+final class TopPlayerFantasyStatsController extends AbstractController
 {
     #[Route('/api/players/fantasy/top', name: 'api_players_fantasy_top', methods: ['GET'])]
     public function top(
@@ -19,7 +19,11 @@ final class PlayerFantasyStatsController extends AbstractController
         ValidatorInterface $validator,
         GetTopFantasyPlayersUseCase $useCase
     ): TopFantasyPlayersResponse {
+        $rawMatchId = $request->query->get('match_id');
+        $matchId = $rawMatchId !== null && $rawMatchId !== '' ? (int) $rawMatchId : null;
+
         $query = new GetTopFantasyPlayersQuery(
+            matchId: $matchId,
             limit: (int) $request->query->get('limit', 10),
             matches: (int) $request->query->get('matches', 20),
             offset: (int) $request->query->get('offset', 0),
@@ -31,7 +35,7 @@ final class PlayerFantasyStatsController extends AbstractController
         }
 
         return new TopFantasyPlayersResponse(
-            $useCase->execute($query->limit, $query->matches, $query->offset)
+            $useCase->execute($query->limit, $query->matches, $query->offset, $query->matchId)
         );
     }
 }

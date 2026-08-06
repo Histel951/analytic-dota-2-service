@@ -47,6 +47,14 @@ final readonly class GetTopFantasyPlayersService
         );
     }
 
+    /**
+     * @return array<array<string, mixed>>
+     */
+    public function getFantasyStatsByMatchId(int $matchId, int $limit = 100, int $offset = 0): array
+    {
+        return $this->repository->findFantasyStatsByMatchId($matchId, $limit, $offset);
+    }
+
     private function selectTopMetrics(array $row): array
     {
         $metrics = [];
