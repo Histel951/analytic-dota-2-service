@@ -56,4 +56,32 @@ final readonly class PsqlMatchPlayerRepository implements MatchPlayersRepository
 
         $this->connection->executeStatement($sql, $parameters);
     }
+
+    /**
+     * @throws Exception
+     */
+    public function getNicknamesByIds(array $playerIds): array
+    {
+        if (empty($playerIds)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($playerIds), '?'));
+        
+        $sql = "
+            SELECT DISTINCT player_id, player_pro_name
+            FROM " . self::TABLE . "
+            WHERE player_id IN ({$placeholders})
+              AND player_pro_name IS NOT NULL
+        ";
+
+        $rows = $this->connection->fetchAllAssociative($sql, $playerIds);
+
+        $result = [];
+        foreach ($rows as $row) {
+            $result[(int) $row['player_id']] = $row['player_pro_name'] ?? 'Unknown';
+        }
+
+        return $result;
+    }
 }

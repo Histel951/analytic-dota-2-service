@@ -13,4 +13,12 @@ interface MatchPlayersRepository
      * @return void
      */
     public function saveMatchPlayersBulk(array $players): void;
+
+    /**
+     * Получить никнеймы игроков по их ID
+     * 
+     * @param int[] $playerIds
+     * @return array<int, string> Массив [player_id => nickname]
+     */
+    public function getNicknamesByIds(array $playerIds): array;
 }

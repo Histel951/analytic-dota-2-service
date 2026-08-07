@@ -10,6 +10,7 @@ final readonly class RoleGroupMetricsDto
      * @param string $groupLabel
      * @param int[] $roles
      * @param MetricDto[] $topMetrics
+     * @param TopComboDto[] $topCombos
      * @param int $matchesAnalyzed
      * @param int $playersAnalyzed
      */
@@ -18,6 +19,7 @@ final readonly class RoleGroupMetricsDto
         private string $groupLabel,
         private array $roles,
         private array $topMetrics,
+        private array $topCombos,
         private int $matchesAnalyzed,
         private int $playersAnalyzed,
     ) {}
@@ -48,6 +50,14 @@ final readonly class RoleGroupMetricsDto
         return $this->topMetrics;
     }
 
+    /**
+     * @return TopComboDto[]
+     */
+    public function getTopCombos(): array
+    {
+        return $this->topCombos;
+    }
+
     public function getMatchesAnalyzed(): int
     {
         return $this->matchesAnalyzed;
@@ -65,6 +75,7 @@ final readonly class RoleGroupMetricsDto
             'group_label' => $this->groupLabel,
             'roles' => $this->roles,
             'top_metrics' => array_map(fn($metric) => $metric->toArray(), $this->topMetrics),
+            'top_combos' => array_map(fn($combo) => $combo->toArray(), $this->topCombos),
             'matches_analyzed' => $this->matchesAnalyzed,
             'players_analyzed' => $this->playersAnalyzed,
         ];

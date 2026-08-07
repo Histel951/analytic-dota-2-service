@@ -5,7 +5,10 @@ namespace App\Application\Fantasy\Service;
 
 use App\Application\Fantasy\Dto\GetTopMetricsServiceRequest;
 use App\Application\Fantasy\Dto\MetricDto;
+use App\Application\Fantasy\Dto\MetricValueDto;
+use App\Application\Fantasy\Dto\PlayerInComboDto;
 use App\Application\Fantasy\Dto\RoleGroupMetricsDto;
+use App\Application\Fantasy\Dto\TopComboDto;
 use App\Application\Fantasy\Dto\TopFantasyMetricsResult;
 use App\Domain\Fantasy\Repository\FantasyMetricAnalysisRepository;
 
@@ -63,11 +66,62 @@ final readonly class GetTopFantasyMetricsService
                     $recommendation->getTopMetrics()
                 );
 
+                // Маппим топ-комбо
+                $topCombosDtos = array_map(
+                    function ($combo) use ($recommendation) {
+                        $topMetricNames = array_map(
+                            fn($m) => $m->getMetricName(),
+                            $recommendation->getTopMetrics()
+                        );
+
+                        $playersDtos = array_map(
+                            function ($player) use ($topMetricNames) {
+                                // Разделяем метрики на top и all
+                                $topMetrics = [];
+                                $allMetrics = [];
+
+                                foreach ($player->getMetrics() as $metric) {
+                                    $metricValueDto = new MetricValueDto(
+                                        metricName: $metric->getMetricName(),
+                                        avgValue: $metric->getAvgValue(),
+                                    );
+
+                                    $allMetrics[] = $metricValueDto;
+
+                                    if ($metric->isTopMetric()) {
+                                        $topMetrics[] = $metricValueDto;
+                                    }
+                                }
+
+                                return new PlayerInComboDto(
+                                    playerId: (int)$player->getPlayerId()->getValue(),
+                                    nickname: $player->getNickname(),
+                                    role: $player->getRole(),
+                                    avgTotalScore: $player->getAvgTotalScore(),
+                                    allMetrics: $allMetrics,
+                                    topMetrics: $topMetrics,
+                                    matchesCount: $player->getMatchesCount(),
+                                );
+                            },
+                            $combo->getPlayers()
+                        );
+
+                        return new TopComboDto(
+                            teamId: (int)$combo->getTeamId()->getValue(),
+                            players: $playersDtos,
+                            avgCombinedScore: $combo->getAvgCombinedScore(),
+                            matchesCount: $combo->getMatchesCount(),
+                        );
+                    },
+                    $recommendation->getTopCombos()
+                );
+
                 return new RoleGroupMetricsDto(
                     group: $recommendation->getRoleGroup()->value,
                     groupLabel: $recommendation->getRoleGroup()->getLabel(),
                     roles: $recommendation->getRoleGroup()->getRoles(),
                     topMetrics: $metricDtos,
+                    topCombos: $topCombosDtos,
                     matchesAnalyzed: $recommendation->getMatchesAnalyzed(),
                     playersAnalyzed: $recommendation->getPlayersAnalyzed(),
                 );
