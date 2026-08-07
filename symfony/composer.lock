@@ -1016,12 +1016,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Histel951/dota-2-api.git",
-                "reference": "eda85dce5f0095b6f7f59e49a15951348c5dab49"
+                "reference": "d1bcabaac48f3eda70624a2712653ab2e2fa33d2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Histel951/dota-2-api/zipball/eda85dce5f0095b6f7f59e49a15951348c5dab49",
-                "reference": "eda85dce5f0095b6f7f59e49a15951348c5dab49",
+                "url": "https://api.github.com/repos/Histel951/dota-2-api/zipball/d1bcabaac48f3eda70624a2712653ab2e2fa33d2",
+                "reference": "d1bcabaac48f3eda70624a2712653ab2e2fa33d2",
                 "shasum": ""
             },
             "require": {
@@ -1072,7 +1072,7 @@
                 "source": "https://github.com/Histel951/dota-2-api/tree/main",
                 "issues": "https://github.com/Histel951/dota-2-api/issues"
             },
-            "time": "2026-08-06T13:27:57+00:00"
+            "time": "2026-08-07T05:53:09+00:00"
         },
         {
             "name": "nyholm/psr7",

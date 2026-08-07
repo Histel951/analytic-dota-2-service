@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Application\Fantasy\Dto;
 
+use App\Domain\Fantasy\Enum\EmblemType;
+
 final readonly class MetricDto
 {
     public function __construct(
@@ -28,10 +30,14 @@ final readonly class MetricDto
 
     public function toArray(): array
     {
+        $emblem = EmblemType::fromMetric($this->metricName);
+
         return [
             'metric' => $this->metricName,
             'avg_value' => round($this->avgValue, 2),
             'contribution_percent' => $this->contributionPercent,
+            'type' => $emblem->value,
+            'name' => $emblem->getLabel(),
         ];
     }
 }

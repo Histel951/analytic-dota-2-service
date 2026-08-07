@@ -84,7 +84,7 @@ final readonly class FetchMatchFromApiHandler
 
     private function handleError(MatchId $matchId, Throwable $error, string $errorType): void
     {
-        $this->logger->error('Failed to fetch match', [
+        $this->logger->error('Failed to fetch match ' . $matchId->getValue(), [
             'match_id' => $matchId->getValue(),
             'error' => $error->getMessage(),
             'error_type' => $errorType,
