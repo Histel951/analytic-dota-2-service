@@ -154,20 +154,14 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
         $metricSelectsStr = implode(",\n                ", $metricSelects);
 
         // Основной запрос для получения средних значений метрик
-        $limitClause = $matchesLimit !== null ? "LIMIT {$matchesLimit}" : '';
+        $limitedMatchesCte = $this->buildLimitedMatchesCte(
+            $whereClause,
+            $eligiblePlayerIdsStr,
+            $matchesLimit,
+        );
 
         $metricsQuery = "
-            WITH limited_matches AS (
-                SELECT 
-                    pms.match_id,
-                    pms.player_id,
-                    pms.start_time
-                FROM player_match_stats pms
-                WHERE {$whereClause}
-                  AND pms.player_id IN ({$eligiblePlayerIdsStr})
-                ORDER BY pms.start_time DESC
-                {$limitClause}
-            )
+            WITH {$limitedMatchesCte}
             SELECT 
                 {$metricSelectsStr},
                 avg(pmf.total_score) as avg_total_score,
@@ -206,7 +200,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
         // Топ-метрики по квотам эмблем role group (core/utility/support)
         $topMetrics = $this->selectTopMetricsByEmblemRules->select($roleGroup, $metricContributions);
 
-        // Получаем топ-3 комбо для этой role group
+        // Получаем комбо игроков для этой role group (все, по убыванию score)
         $topCombos = $this->getTopCombosForRoleGroup(
             $roleGroup,
             $teamIds,
@@ -382,7 +376,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
     }
 
     /**
-     * Получает топ-3 комбо игроков для role group
+     * Получает комбо игроков для role group (все, по убыванию score)
      *
      * @return TopComboRecommendation[]
      */
@@ -397,7 +391,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
     ): array {
         $roles = $roleGroup->getRoles();
         
-        // Для mid (1 роль) - просто топ-3 игрока
+        // Для mid (1 роль) - все игроки по убыванию score
         if (count($roles) === 1) {
             return $this->getTopPlayersForSingleRole(
                 $roleGroup,
@@ -411,7 +405,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
             );
         }
         
-        // Для core_side и support (2 роли) - топ-3 пары из одной команды
+        // Для core_side и support (2 роли) - все пары из одной команды
         return $this->getTopCombosForDoubleRoles(
             $roleGroup,
             $roles,
@@ -425,7 +419,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
     }
 
     /**
-     * Получает топ-3 игрока для роли с одним слотом (mid)
+     * Получает игроков для роли с одним слотом (mid), по убыванию score
      * 
      * @return TopComboRecommendation[]
      */
@@ -487,7 +481,11 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
         }
         $metricSelectsStr = implode(",\n                ", $metricSelects);
 
-        $limitClause = $matchesLimit !== null ? "LIMIT {$matchesLimit}" : '';
+        $limitedMatchesCte = $this->buildLimitedMatchesCte(
+            $whereClause,
+            'SELECT player_id FROM eligible_players',
+            $matchesLimit,
+        );
 
         $query = "
             WITH eligible_players AS (
@@ -499,17 +497,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
                 GROUP BY pms.player_id, pms.opendota_team_id
                 HAVING count(*) >= :min_matches
             ),
-            limited_matches AS (
-                SELECT 
-                    pms.match_id,
-                    pms.player_id,
-                    pms.start_time
-                FROM player_match_stats pms
-                WHERE {$whereClause}
-                  AND pms.player_id IN (SELECT player_id FROM eligible_players)
-                ORDER BY pms.start_time DESC
-                {$limitClause}
-            )
+            {$limitedMatchesCte}
             SELECT 
                 pmf.player_id as player_id,
                 ep.opendota_team_id as opendota_team_id,
@@ -524,7 +512,6 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
                 ON pmf.player_id = ep.player_id
             GROUP BY player_id, opendota_team_id
             ORDER BY avg_total_score DESC
-            LIMIT 16
         ";
 
         $params['min_matches'] = $minMatchesPerPlayer;
@@ -551,7 +538,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
     }
 
     /**
-     * Получает топ-3 пары игроков для ролей с двумя слотами (core_side, support)
+     * Получает пары игроков для ролей с двумя слотами (core_side, support), по убыванию score
      * 
      * @return TopComboRecommendation[]
      */
@@ -614,7 +601,11 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
         }
         $metricSelectsStr = implode(",\n                ", $metricSelects);
 
-        $limitClause = $matchesLimit !== null ? "LIMIT {$matchesLimit}" : '';
+        $limitedMatchesCte = $this->buildLimitedMatchesCte(
+            $whereClause,
+            'SELECT player_id FROM eligible_players',
+            $matchesLimit,
+        );
 
         $query = "
             WITH eligible_players AS (
@@ -627,17 +618,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
                 GROUP BY pms.player_id, pms.opendota_team_id, pms.role
                 HAVING count(*) >= :min_matches
             ),
-            limited_matches AS (
-                SELECT 
-                    pms.match_id,
-                    pms.player_id,
-                    pms.start_time
-                FROM player_match_stats pms
-                WHERE {$whereClause}
-                  AND pms.player_id IN (SELECT player_id FROM eligible_players)
-                ORDER BY pms.start_time DESC
-                {$limitClause}
-            ),
+            {$limitedMatchesCte},
             player_metrics AS (
                 SELECT 
                     pmf.player_id as player_id,
@@ -662,12 +643,6 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
                 FROM player_metrics
                 GROUP BY opendota_team_id
                 HAVING players_in_combo >= 1
-            ),
-            top_teams AS (
-                SELECT opendota_team_id
-                FROM team_combos
-                ORDER BY combined_score DESC
-                LIMIT 16
             )
             SELECT 
                 pm.opendota_team_id,
@@ -680,7 +655,6 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
                 tc.min_matches_count
             FROM player_metrics pm
             INNER JOIN team_combos tc ON pm.opendota_team_id = tc.opendota_team_id
-            WHERE pm.opendota_team_id IN (SELECT opendota_team_id FROM top_teams)
             ORDER BY tc.combined_score DESC, pm.opendota_team_id, pm.role
         ";
 
@@ -798,7 +772,59 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
             );
         }
 
-        return array_slice($combos, 0, 3);
+        return $combos;
+    }
+
+    /**
+     * CTE limited_matches: последние N матчей на каждую команду (не глобальный LIMIT).
+     *
+     * @param string $eligiblePlayersFilter SQL для IN (...): список id или подзапрос
+     */
+    private function buildLimitedMatchesCte(
+        string $whereClause,
+        string $eligiblePlayersFilter,
+        ?int $matchesLimit,
+    ): string {
+        if ($matchesLimit === null) {
+            return "
+                limited_matches AS (
+                    SELECT 
+                        pms.match_id,
+                        pms.player_id,
+                        pms.start_time
+                    FROM player_match_stats pms
+                    WHERE {$whereClause}
+                      AND pms.player_id IN ({$eligiblePlayersFilter})
+                )
+            ";
+        }
+
+        return "
+            limited_team_matches AS (
+                SELECT
+                    pms.match_id,
+                    pms.opendota_team_id,
+                    any(pms.start_time) AS start_time
+                FROM player_match_stats pms
+                WHERE {$whereClause}
+                  AND pms.player_id IN ({$eligiblePlayersFilter})
+                GROUP BY pms.match_id, pms.opendota_team_id
+                ORDER BY start_time DESC
+                LIMIT {$matchesLimit} BY opendota_team_id
+            ),
+            limited_matches AS (
+                SELECT 
+                    pms.match_id,
+                    pms.player_id,
+                    pms.start_time
+                FROM player_match_stats pms
+                INNER JOIN limited_team_matches ltm
+                    ON pms.match_id = ltm.match_id
+                   AND pms.opendota_team_id = ltm.opendota_team_id
+                WHERE {$whereClause}
+                  AND pms.player_id IN ({$eligiblePlayersFilter})
+            )
+        ";
     }
 
     /**
