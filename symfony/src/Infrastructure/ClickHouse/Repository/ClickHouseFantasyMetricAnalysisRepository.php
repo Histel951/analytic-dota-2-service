@@ -10,6 +10,8 @@ use App\Domain\Fantasy\Enum\RoleGroup;
 use App\Domain\Fantasy\Repository\FantasyMetricAnalysisRepository;
 use App\Domain\Fantasy\Service\SelectTopMetricsByEmblemRules;
 use App\Domain\Fantasy\ValueObject\MetricContribution;
+use App\Domain\Fantasy\ValueObject\PlayerAnalyzedMatch;
+use App\Domain\Fantasy\ValueObject\PlayerMatchStatistic;
 use App\Domain\Fantasy\ValueObject\PlayerMetrics;
 use App\Domain\Match\Repository\MatchPlayersRepository;
 use ClickHouseDB\Client;
@@ -536,7 +538,26 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
             return [];
         }
 
-        return $this->mapRowsToTopCombos($rows, $roleGroup);
+        $matchesByPlayerTeam = $this->fetchPlayerMatchesByRows(
+            $rows,
+            $whereClause,
+            "
+                eligible_players AS (
+                    SELECT 
+                        pms.player_id,
+                        pms.opendota_team_id
+                    FROM player_match_stats pms
+                    WHERE {$whereClause}
+                    GROUP BY pms.player_id, pms.opendota_team_id
+                    HAVING count(*) >= :min_matches
+                )
+            ",
+            'SELECT player_id FROM eligible_players',
+            $matchesLimit,
+            $params,
+        );
+
+        return $this->mapRowsToTopCombos($rows, $roleGroup, $matchesByPlayerTeam);
     }
 
     /**
@@ -684,15 +705,36 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
             return [];
         }
 
-        return $this->mapRowsToTopCombosGrouped($rows, $roleGroup);
+        $matchesByPlayerTeam = $this->fetchPlayerMatchesByRows(
+            $rows,
+            $whereClause,
+            "
+                eligible_players AS (
+                    SELECT 
+                        pms.player_id,
+                        pms.opendota_team_id,
+                        pms.role
+                    FROM player_match_stats pms
+                    WHERE {$whereClause}
+                    GROUP BY pms.player_id, pms.opendota_team_id, pms.role
+                    HAVING count(*) >= :min_matches
+                )
+            ",
+            'SELECT player_id FROM eligible_players',
+            $matchesLimit,
+            $params,
+        );
+
+        return $this->mapRowsToTopCombosGrouped($rows, $roleGroup, $matchesByPlayerTeam);
     }
 
     /**
      * Маппинг строк в TopComboRecommendation для одиночных ролей
-     * 
+     *
+     * @param array<string, PlayerAnalyzedMatch[]> $matchesByPlayerTeam
      * @return TopComboRecommendation[]
      */
-    private function mapRowsToTopCombos(array $rows, RoleGroup $roleGroup): array
+    private function mapRowsToTopCombos(array $rows, RoleGroup $roleGroup, array $matchesByPlayerTeam): array
     {
         if (empty($rows)) {
             return [];
@@ -704,7 +746,9 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
         $combos = [];
         foreach ($rows as $row) {
             $playerId = (int) $row['player_id'];
+            $teamId = (int) $row['opendota_team_id'];
             $role = (int) ($row['role'] ?? 2);
+            $key = $this->playerTeamKey($playerId, $teamId);
 
             $player = new PlayerInCombo(
                 playerId: new PlayerId($playerId),
@@ -713,12 +757,13 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
                 avgTotalScore: (float) $row['avg_total_score'],
                 metrics: $this->buildPlayerMetrics($row, $role),
                 matchesCount: (int) $row['matches_count'],
+                matches: $matchesByPlayerTeam[$key] ?? [],
             );
 
             $players = [$player];
 
             $combos[] = new TopComboRecommendation(
-                teamId: new TeamId((int) $row['opendota_team_id']),
+                teamId: new TeamId($teamId),
                 topMetrics: $this->buildComboTopMetrics($players, $roleGroup),
                 players: $players,
                 avgCombinedScore: (float) $row['avg_total_score'],
@@ -732,10 +777,11 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
 
     /**
      * Маппинг сгруппированных строк в TopComboRecommendation для парных ролей
-     * 
+     *
+     * @param array<string, PlayerAnalyzedMatch[]> $matchesByPlayerTeam
      * @return TopComboRecommendation[]
      */
-    private function mapRowsToTopCombosGrouped(array $rows, RoleGroup $roleGroup): array
+    private function mapRowsToTopCombosGrouped(array $rows, RoleGroup $roleGroup, array $matchesByPlayerTeam): array
     {
         if (empty($rows)) {
             return [];
@@ -758,6 +804,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
 
             $playerId = (int) $row['player_id'];
             $role = (int) $row['role'];
+            $key = $this->playerTeamKey($playerId, $teamId);
 
             $teamGroups[$teamId]['players'][] = new PlayerInCombo(
                 playerId: new PlayerId($playerId),
@@ -766,6 +813,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
                 avgTotalScore: (float) $row['avg_total_score'],
                 metrics: $this->buildPlayerMetrics($row, $role),
                 matchesCount: (int) $row['matches_count'],
+                matches: $matchesByPlayerTeam[$key] ?? [],
             );
         }
 
@@ -785,6 +833,106 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
     }
 
     /**
+     * @param array<int, array<string, mixed>> $rows
+     * @return array<string, PlayerAnalyzedMatch[]>
+     */
+    private function fetchPlayerMatchesByRows(
+        array $rows,
+        string $whereClause,
+        string $eligiblePlayersCte,
+        string $eligiblePlayersFilter,
+        ?int $matchesLimit,
+        array $params,
+    ): array {
+        if (empty($rows)) {
+            return [];
+        }
+
+        $playerIds = array_values(array_unique(array_map(
+            fn(array $row) => (int) $row['player_id'],
+            $rows
+        )));
+        $playerIdsCondition = implode(', ', $playerIds);
+
+        $pairConditions = [];
+        foreach ($rows as $row) {
+            $pairConditions[$this->playerTeamKey((int) $row['player_id'], (int) $row['opendota_team_id'])] = sprintf(
+                '(player_id = %d AND opendota_team_id = %d)',
+                (int) $row['player_id'],
+                (int) $row['opendota_team_id']
+            );
+        }
+        $pairsCondition = implode(' OR ', array_values($pairConditions));
+
+        $limitedMatchesCte = $this->buildLimitedMatchesCte(
+            $whereClause,
+            $eligiblePlayersFilter,
+            $matchesLimit,
+        );
+
+        $query = "
+            WITH {$eligiblePlayersCte},
+            {$limitedMatchesCte}
+            SELECT
+                player_id AS player_id,
+                opendota_team_id AS opendota_team_id,
+                match_id AS match_id,
+                duration AS match_duration,
+                start_time AS start_time,
+                kills AS kills,
+                deaths AS deaths,
+                assists AS assists,
+                gpm AS gpm,
+                xpm AS xpm,
+                net_worth AS net_worth,
+                creeps_last_hits AS creeps_last_hits,
+                creeps_denies AS creeps_denies,
+                opendota_hero_id AS opendota_hero_id,
+                win AS is_win
+            FROM limited_matches
+            WHERE player_id IN ({$playerIdsCondition})
+              AND ({$pairsCondition})
+            ORDER BY player_id, opendota_team_id, start_time DESC
+        ";
+
+        $statement = $this->clickhouse->select($query, $params);
+        $matchRows = $statement->rows();
+
+        $result = [];
+        foreach ($matchRows as $matchRow) {
+            $key = $this->playerTeamKey(
+                (int) $matchRow['player_id'],
+                (int) $matchRow['opendota_team_id']
+            );
+
+            $result[$key][] = new PlayerAnalyzedMatch(
+                matchId: (int) $matchRow['match_id'],
+                matchDuration: (int) $matchRow['match_duration'],
+                startTime: new DateTimeImmutable((string) $matchRow['start_time']),
+                statistic: new PlayerMatchStatistic(
+                    kills: (int) $matchRow['kills'],
+                    deaths: (int) $matchRow['deaths'],
+                    assists: (int) $matchRow['assists'],
+                    gpm: (int) $matchRow['gpm'],
+                    xpm: (int) $matchRow['xpm'],
+                    netWorth: (int) $matchRow['net_worth'],
+                    creepsLastHits: (int) $matchRow['creeps_last_hits'],
+                    creepsDenies: (int) $matchRow['creeps_denies'],
+                    opendotaHeroId: (int) $matchRow['opendota_hero_id'],
+                ),
+                isWin: (bool) $matchRow['is_win'],
+            );
+        }
+
+        return $result;
+    }
+
+    private function playerTeamKey(int $playerId, int $teamId): string
+    {
+        return $playerId . '_' . $teamId;
+    }
+
+    /**
      * CTE limited_matches: последние N матчей на каждую команду (не глобальный LIMIT).
      *
      * @param string $eligiblePlayersFilter SQL для IN (...): список id или подзапрос
@@ -794,15 +942,29 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
         string $eligiblePlayersFilter,
         ?int $matchesLimit,
     ): string {
+        $matchStatsSelect = '
+            pms.match_id,
+            pms.player_id,
+            pms.start_time,
+            pms.duration,
+            pms.opendota_team_id,
+            pms.kills,
+            pms.deaths,
+            pms.assists,
+            pms.gpm,
+            pms.xpm,
+            pms.net_worth,
+            pms.creeps_last_hits,
+            pms.creeps_denies,
+            pms.opendota_hero_id,
+            pms.win
+        ';
+
         if ($matchesLimit === null) {
             return "
                 limited_matches AS (
                     SELECT 
-                        pms.match_id,
-                        pms.player_id,
-                        pms.start_time,
-                        pms.duration,
-                        pms.opendota_team_id
+                        {$matchStatsSelect}
                     FROM player_match_stats pms
                     WHERE {$whereClause}
                       AND pms.player_id IN ({$eligiblePlayersFilter})
@@ -825,11 +987,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
             ),
             limited_matches AS (
                 SELECT 
-                    pms.match_id,
-                    pms.player_id,
-                    pms.start_time,
-                    pms.duration,
-                    pms.opendota_team_id
+                    {$matchStatsSelect}
                 FROM player_match_stats pms
                 INNER JOIN limited_team_matches ltm
                     ON pms.match_id = ltm.match_id

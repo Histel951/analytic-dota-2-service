@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Fantasy\Entity;
 
+use App\Domain\Fantasy\ValueObject\PlayerAnalyzedMatch;
 use App\Domain\Fantasy\ValueObject\PlayerMetrics;
 use Histel951\Dota2Api\Domain\Common\ValueObjects\PlayerId;
 
@@ -10,6 +11,7 @@ final readonly class PlayerInCombo
 {
     /**
      * @param PlayerMetrics[] $metrics
+     * @param PlayerAnalyzedMatch[] $matches
      */
     public function __construct(
         private PlayerId $playerId,
@@ -18,11 +20,20 @@ final readonly class PlayerInCombo
         private float $avgTotalScore,
         private array $metrics,
         private int $matchesCount,
+        private array $matches = [],
     ) {
         foreach ($metrics as $metric) {
             if (!$metric instanceof PlayerMetrics) {
                 throw new \InvalidArgumentException(
                     'All metrics must be instances of PlayerMetrics'
+                );
+            }
+        }
+
+        foreach ($matches as $match) {
+            if (!$match instanceof PlayerAnalyzedMatch) {
+                throw new \InvalidArgumentException(
+                    'All matches must be instances of PlayerAnalyzedMatch'
                 );
             }
         }
@@ -59,5 +70,13 @@ final readonly class PlayerInCombo
     public function getMatchesCount(): int
     {
         return $this->matchesCount;
+    }
+
+    /**
+     * @return PlayerAnalyzedMatch[]
+     */
+    public function getMatches(): array
+    {
+        return $this->matches;
     }
 }

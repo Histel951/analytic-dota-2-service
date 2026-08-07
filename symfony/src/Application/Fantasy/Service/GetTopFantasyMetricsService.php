@@ -6,7 +6,9 @@ namespace App\Application\Fantasy\Service;
 use App\Application\Fantasy\Dto\GetTopMetricsServiceRequest;
 use App\Application\Fantasy\Dto\MetricDto;
 use App\Application\Fantasy\Dto\MetricValueDto;
+use App\Application\Fantasy\Dto\PlayerAnalyzedMatchDto;
 use App\Application\Fantasy\Dto\PlayerInComboDto;
+use App\Application\Fantasy\Dto\PlayerMatchStatisticDto;
 use App\Application\Fantasy\Dto\RoleGroupMetricsDto;
 use App\Application\Fantasy\Dto\TopComboDto;
 use App\Application\Fantasy\Dto\TopFantasyMetricsResult;
@@ -87,11 +89,37 @@ final readonly class GetTopFantasyMetricsService
                                     }
                                 }
 
+                                $matchesDtos = array_map(
+                                    function ($match) {
+                                        $statistic = $match->getStatistic();
+
+                                        return new PlayerAnalyzedMatchDto(
+                                            matchId: $match->getMatchId(),
+                                            matchDuration: $match->getMatchDuration(),
+                                            startTime: $match->getStartTime()->format('Y-m-d H:i:s'),
+                                            statistic: new PlayerMatchStatisticDto(
+                                                kills: $statistic->getKills(),
+                                                deaths: $statistic->getDeaths(),
+                                                assists: $statistic->getAssists(),
+                                                gpm: $statistic->getGpm(),
+                                                xpm: $statistic->getXpm(),
+                                                netWorth: $statistic->getNetWorth(),
+                                                creepsLastHits: $statistic->getCreepsLastHits(),
+                                                creepsDenies: $statistic->getCreepsDenies(),
+                                                opendotaHeroId: $statistic->getOpendotaHeroId(),
+                                            ),
+                                            isWin: $match->isWin(),
+                                        );
+                                    },
+                                    $player->getMatches()
+                                );
+
                                 return new PlayerInComboDto(
                                     playerId: (int)$player->getPlayerId()->getValue(),
                                     nickname: $player->getNickname(),
                                     role: $player->getRole(),
                                     avgTotalScore: $player->getAvgTotalScore(),
+                                    matches: $matchesDtos,
                                     allMetrics: $allMetrics,
                                     topMetrics: $topMetrics,
                                     matchesCount: $player->getMatchesCount(),

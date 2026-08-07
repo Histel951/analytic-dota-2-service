@@ -8,12 +8,14 @@ final readonly class PlayerInComboDto
     /**
      * @param MetricValueDto[] $allMetrics
      * @param MetricValueDto[] $topMetrics
+     * @param PlayerAnalyzedMatchDto[] $matches
      */
     public function __construct(
         private int $playerId,
         private string $nickname,
         private int $role,
         private float $avgTotalScore,
+        private array $matches,
         private array $allMetrics,
         private array $topMetrics,
         private int $matchesCount,
@@ -26,6 +28,7 @@ final readonly class PlayerInComboDto
             'nickname' => $this->nickname,
             'role' => $this->role,
             'avg_total_score' => round($this->avgTotalScore, 2),
+            'matches' => array_map(fn($m) => $m->toArray(), $this->matches),
             'top_metrics' => array_map(fn($m) => $m->toArray(), $this->topMetrics),
             'all_metrics' => array_map(fn($m) => $m->toArray(), $this->allMetrics),
             'matches_count' => $this->matchesCount,
