@@ -8,6 +8,7 @@ use App\Domain\Fantasy\Entity\RoleGroupMetricRecommendation;
 use App\Domain\Fantasy\Entity\TopComboRecommendation;
 use App\Domain\Fantasy\Enum\RoleGroup;
 use App\Domain\Fantasy\Repository\FantasyMetricAnalysisRepository;
+use App\Domain\Fantasy\Service\SelectTopMetricsByEmblemRules;
 use App\Domain\Fantasy\ValueObject\MetricContribution;
 use App\Domain\Fantasy\ValueObject\PlayerMetrics;
 use App\Domain\Match\Repository\MatchPlayersRepository;
@@ -40,6 +41,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
     public function __construct(
         private Client $clickhouse,
         private MatchPlayersRepository $matchPlayersRepository,
+        private SelectTopMetricsByEmblemRules $selectTopMetricsByEmblemRules,
     ) {}
 
     public function getTopMetricsByRoleGroups(
@@ -201,18 +203,8 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
             ];
         }
 
-        // Сортируем по вкладу
-        usort($metricContributions, fn($a, $b) => $b['contribution'] <=> $a['contribution']);
-        $topThree = array_slice($metricContributions, 0, 3);
-
-        $topMetrics = array_map(
-            fn($item) => new MetricContribution(
-                metricName: $item['metric'],
-                avgValue: $item['avg_value'],
-                contributionPercent: round($item['contribution'], 2),
-            ),
-            $topThree
-        );
+        // Топ-метрики по квотам эмблем role group (core/utility/support)
+        $topMetrics = $this->selectTopMetricsByEmblemRules->select($roleGroup, $metricContributions);
 
         // Получаем топ-3 комбо для этой role group
         $topCombos = $this->getTopCombosForRoleGroup(
@@ -223,7 +215,6 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
             $dateFrom,
             $dateTo,
             $matchesLimit,
-            $topThree,
         );
 
         return new RoleGroupMetricRecommendation(
@@ -392,8 +383,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
 
     /**
      * Получает топ-3 комбо игроков для role group
-     * 
-     * @param array $topThreeMetrics Массив топ-3 метрик ['metric' => ..., 'avg_value' => ..., 'contribution' => ...]
+     *
      * @return TopComboRecommendation[]
      */
     private function getTopCombosForRoleGroup(
@@ -404,13 +394,13 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
         ?DateTimeImmutable $dateFrom,
         ?DateTimeImmutable $dateTo,
         ?int $matchesLimit,
-        array $topThreeMetrics,
     ): array {
         $roles = $roleGroup->getRoles();
         
         // Для mid (1 роль) - просто топ-3 игрока
         if (count($roles) === 1) {
             return $this->getTopPlayersForSingleRole(
+                $roleGroup,
                 $roles[0],
                 $teamIds,
                 $playerIds,
@@ -418,12 +408,12 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
                 $dateFrom,
                 $dateTo,
                 $matchesLimit,
-                $topThreeMetrics,
             );
         }
         
         // Для core_side и support (2 роли) - топ-3 пары из одной команды
         return $this->getTopCombosForDoubleRoles(
+            $roleGroup,
             $roles,
             $teamIds,
             $playerIds,
@@ -431,7 +421,6 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
             $dateFrom,
             $dateTo,
             $matchesLimit,
-            $topThreeMetrics,
         );
     }
 
@@ -441,6 +430,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
      * @return TopComboRecommendation[]
      */
     private function getTopPlayersForSingleRole(
+        RoleGroup $roleGroup,
         int $role,
         ?array $teamIds,
         ?array $playerIds,
@@ -448,7 +438,6 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
         ?DateTimeImmutable $dateFrom,
         ?DateTimeImmutable $dateTo,
         ?int $matchesLimit,
-        array $topThreeMetrics,
     ): array {
         $whereConditions = ["pms.role = {$role}"];
         $params = [];
@@ -558,7 +547,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
             return [];
         }
 
-        return $this->mapRowsToTopCombos($rows, $topThreeMetrics, true);
+        return $this->mapRowsToTopCombos($rows, $roleGroup);
     }
 
     /**
@@ -567,6 +556,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
      * @return TopComboRecommendation[]
      */
     private function getTopCombosForDoubleRoles(
+        RoleGroup $roleGroup,
         array $roles,
         ?array $teamIds,
         ?array $playerIds,
@@ -574,7 +564,6 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
         ?DateTimeImmutable $dateFrom,
         ?DateTimeImmutable $dateTo,
         ?int $matchesLimit,
-        array $topThreeMetrics,
     ): array {
         $rolesCondition = implode(', ', $roles);
         $whereConditions = ["pms.role IN ({$rolesCondition})"];
@@ -715,7 +704,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
             return [];
         }
 
-        return $this->mapRowsToTopCombosGrouped($rows, $topThreeMetrics);
+        return $this->mapRowsToTopCombosGrouped($rows, $roleGroup);
     }
 
     /**
@@ -723,61 +712,35 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
      * 
      * @return TopComboRecommendation[]
      */
-    private function mapRowsToTopCombos(array $rows, array $topThreeMetrics, bool $isSingleRole): array
+    private function mapRowsToTopCombos(array $rows, RoleGroup $roleGroup): array
     {
         if (empty($rows)) {
             return [];
         }
 
-        // Получаем все player_ids для запроса nicknames
         $playerIds = array_map(fn($row) => (int) $row['player_id'], $rows);
         $nicknames = $this->matchPlayersRepository->getNicknamesByIds($playerIds);
-
-        $topThreeMetricNames = array_column($topThreeMetrics, 'metric');
 
         $combos = [];
         foreach ($rows as $row) {
             $playerId = (int) $row['player_id'];
-            $nickname = $nicknames[$playerId] ?? 'Unknown';
-
-            // Создаем массив всех метрик
-            $allMetrics = [];
-            foreach (self::FANTASY_METRICS as $metric) {
-                $avgValue = (float) $row["avg_{$metric}"];
-                
-                $allMetrics[] = [
-                    'metric' => $metric,
-                    'avgValue' => $avgValue,
-                ];
-            }
-
-            // Сортируем метрики по значению (от большего к меньшему)
-            usort($allMetrics, fn($a, $b) => $b['avgValue'] <=> $a['avgValue']);
-
-            // Создаем объекты PlayerMetrics с правильным флагом isTopMetric
-            $playerMetrics = [];
-            foreach ($allMetrics as $index => $metricData) {
-                $isTopMetric = $index < 3; // Первые 3 метрики - топовые
-                
-                $playerMetrics[] = new PlayerMetrics(
-                    metricName: $metricData['metric'],
-                    avgValue: $metricData['avgValue'],
-                    isTopMetric: $isTopMetric,
-                );
-            }
+            $role = (int) ($row['role'] ?? 2);
 
             $player = new PlayerInCombo(
                 playerId: new PlayerId($playerId),
-                nickname: $nickname,
-                role: $row['role'] ?? 2, // для mid по умолчанию
+                nickname: $nicknames[$playerId] ?? 'Unknown',
+                role: $role,
                 avgTotalScore: (float) $row['avg_total_score'],
-                metrics: $playerMetrics,
+                metrics: $this->buildPlayerMetrics($row, $role),
                 matchesCount: (int) $row['matches_count'],
             );
 
+            $players = [$player];
+
             $combos[] = new TopComboRecommendation(
                 teamId: new TeamId((int) $row['opendota_team_id']),
-                players: [$player],
+                topMetrics: $this->buildComboTopMetrics($players, $roleGroup),
+                players: $players,
                 avgCombinedScore: (float) $row['avg_total_score'],
                 matchesCount: (int) $row['matches_count'],
             );
@@ -791,19 +754,15 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
      * 
      * @return TopComboRecommendation[]
      */
-    private function mapRowsToTopCombosGrouped(array $rows, array $topThreeMetrics): array
+    private function mapRowsToTopCombosGrouped(array $rows, RoleGroup $roleGroup): array
     {
         if (empty($rows)) {
             return [];
         }
 
-        // Получаем все player_ids для запроса nicknames
         $playerIds = array_unique(array_map(fn($row) => (int) $row['player_id'], $rows));
         $nicknames = $this->matchPlayersRepository->getNicknamesByIds($playerIds);
 
-        $topThreeMetricNames = array_column($topThreeMetrics, 'metric');
-
-        // Группируем по командам
         $teamGroups = [];
         foreach ($rows as $row) {
             $teamId = (int) $row['opendota_team_id'];
@@ -816,46 +775,103 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
             }
 
             $playerId = (int) $row['player_id'];
-            $nickname = $nicknames[$playerId] ?? 'Unknown';
-
-            // Создаем массив всех метрик
-            $allMetrics = [];
-            foreach (self::FANTASY_METRICS as $metric) {
-                $avgValue = (float) $row["avg_{$metric}"];
-                $isTopMetric = in_array($metric, $topThreeMetricNames, true);
-                
-                $allMetrics[] = new PlayerMetrics(
-                    metricName: $metric,
-                    avgValue: $avgValue,
-                    isTopMetric: $isTopMetric,
-                );
-            }
-
-            // Сортируем метрики по значению (от большего к меньшему)
-            usort($allMetrics, fn($a, $b) => $b->getAvgValue() <=> $a->getAvgValue());
+            $role = (int) $row['role'];
 
             $teamGroups[$teamId]['players'][] = new PlayerInCombo(
                 playerId: new PlayerId($playerId),
-                nickname: $nickname,
-                role: (int) $row['role'],
+                nickname: $nicknames[$playerId] ?? 'Unknown',
+                role: $role,
                 avgTotalScore: (float) $row['avg_total_score'],
-                metrics: $allMetrics,
+                metrics: $this->buildPlayerMetrics($row, $role),
                 matchesCount: (int) $row['matches_count'],
             );
         }
 
-        // Создаем TopComboRecommendation для каждой команды
         $combos = [];
         foreach ($teamGroups as $teamId => $group) {
             $combos[] = new TopComboRecommendation(
                 teamId: new TeamId($teamId),
+                topMetrics: $this->buildComboTopMetrics($group['players'], $roleGroup),
                 players: $group['players'],
                 avgCombinedScore: $group['combined_score'],
                 matchesCount: $group['min_matches_count'],
             );
         }
 
-        // Берем только топ-3
-        return array_slice($combos, 0, 16);
+        return array_slice($combos, 0, 3);
+    }
+
+    /**
+     * Топ-метрики связки игроков: сумма avg по метрикам + квоты эмблем role group.
+     *
+     * @param PlayerInCombo[] $players
+     * @return MetricContribution[]
+     */
+    private function buildComboTopMetrics(array $players, RoleGroup $roleGroup): array
+    {
+        $sums = array_fill_keys(self::FANTASY_METRICS, 0.0);
+        $combinedTotalScore = 0.0;
+
+        foreach ($players as $player) {
+            $combinedTotalScore += $player->getAvgTotalScore();
+
+            foreach ($player->getMetrics() as $metric) {
+                $sums[$metric->getMetricName()] += $metric->getAvgValue();
+            }
+        }
+
+        $metricContributions = [];
+        foreach ($sums as $metric => $avgValue) {
+            $metricContributions[] = [
+                'metric' => $metric,
+                'avg_value' => $avgValue,
+                'contribution' => $combinedTotalScore > 0
+                    ? abs(($avgValue / $combinedTotalScore) * 100)
+                    : 0,
+            ];
+        }
+
+        return $this->selectTopMetricsByEmblemRules->select($roleGroup, $metricContributions);
+    }
+
+    /**
+     * @return PlayerMetrics[]
+     */
+    private function buildPlayerMetrics(array $row, int $role): array
+    {
+        $avgTotalScore = (float) $row['avg_total_score'];
+
+        $metricContributions = [];
+        foreach (self::FANTASY_METRICS as $metric) {
+            $avgValue = (float) $row["avg_{$metric}"];
+            $metricContributions[] = [
+                'metric' => $metric,
+                'avg_value' => $avgValue,
+                'contribution' => $avgTotalScore > 0
+                    ? abs(($avgValue / $avgTotalScore) * 100)
+                    : 0,
+            ];
+        }
+
+        $topMetricNames = array_map(
+            fn(MetricContribution $metric) => $metric->getMetricName(),
+            $this->selectTopMetricsByEmblemRules->select(
+                RoleGroup::fromRole($role),
+                $metricContributions
+            )
+        );
+
+        $allMetrics = [];
+        foreach (self::FANTASY_METRICS as $metric) {
+            $allMetrics[] = new PlayerMetrics(
+                metricName: $metric,
+                avgValue: (float) $row["avg_{$metric}"],
+                isTopMetric: in_array($metric, $topMetricNames, true),
+            );
+        }
+
+        usort($allMetrics, fn($a, $b) => $b->getAvgValue() <=> $a->getAvgValue());
+
+        return $allMetrics;
     }
 }

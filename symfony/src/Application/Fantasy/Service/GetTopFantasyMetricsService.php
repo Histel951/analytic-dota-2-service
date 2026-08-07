@@ -68,15 +68,9 @@ final readonly class GetTopFantasyMetricsService
 
                 // Маппим топ-комбо
                 $topCombosDtos = array_map(
-                    function ($combo) use ($recommendation) {
-                        $topMetricNames = array_map(
-                            fn($m) => $m->getMetricName(),
-                            $recommendation->getTopMetrics()
-                        );
-
+                    function ($combo) {
                         $playersDtos = array_map(
-                            function ($player) use ($topMetricNames) {
-                                // Разделяем метрики на top и all
+                            function ($player) {
                                 $topMetrics = [];
                                 $allMetrics = [];
 
@@ -106,8 +100,17 @@ final readonly class GetTopFantasyMetricsService
                             $combo->getPlayers()
                         );
 
+                        $comboTopMetricsDtos = array_map(
+                            fn($metric) => new MetricValueDto(
+                                metricName: $metric->getMetricName(),
+                                avgValue: $metric->getAvgValue(),
+                            ),
+                            $combo->getTopMetrics()
+                        );
+
                         return new TopComboDto(
                             teamId: (int)$combo->getTeamId()->getValue(),
+                            topMetrics: $comboTopMetricsDtos,
                             players: $playersDtos,
                             avgCombinedScore: $combo->getAvgCombinedScore(),
                             matchesCount: $combo->getMatchesCount(),

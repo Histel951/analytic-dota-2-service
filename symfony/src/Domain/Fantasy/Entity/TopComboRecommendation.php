@@ -3,15 +3,18 @@ declare(strict_types=1);
 
 namespace App\Domain\Fantasy\Entity;
 
+use App\Domain\Fantasy\ValueObject\MetricContribution;
 use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
 
 final readonly class TopComboRecommendation
 {
     /**
      * @param PlayerInCombo[] $players
+     * @param MetricContribution[] $topMetrics
      */
     public function __construct(
         private TeamId $teamId,
+        private array $topMetrics,
         private array $players,
         private float $avgCombinedScore,
         private int $matchesCount,
@@ -27,11 +30,27 @@ final readonly class TopComboRecommendation
                 );
             }
         }
+
+        foreach ($topMetrics as $metric) {
+            if (!$metric instanceof MetricContribution) {
+                throw new \InvalidArgumentException(
+                    'All top metrics must be instances of MetricContribution'
+                );
+            }
+        }
     }
 
     public function getTeamId(): TeamId
     {
         return $this->teamId;
+    }
+
+    /**
+     * @return MetricContribution[]
+     */
+    public function getTopMetrics(): array
+    {
+        return $this->topMetrics;
     }
 
     /**

@@ -30,6 +30,33 @@ enum RoleGroup: string
         };
     }
 
+    /**
+     * Квоты эмблем для топ-метрик role group.
+     *
+     * @return array<string, int> EmblemType->value => quota
+     */
+    public function getEmblemQuota(): array
+    {
+        return match ($this) {
+            // Carry + Offlaner: 2 красные, 1 зелёная
+            self::CORE_SIDE => [
+                EmblemType::CORE->value => 2,
+                EmblemType::UTILITY->value => 1,
+            ],
+            // Mid: 1 красная, 1 зелёная, 1 синяя
+            self::MID => [
+                EmblemType::CORE->value => 1,
+                EmblemType::UTILITY->value => 1,
+                EmblemType::SUPPORT->value => 1,
+            ],
+            // Support: 2 синие, 1 зелёная
+            self::SUPPORT => [
+                EmblemType::SUPPORT->value => 2,
+                EmblemType::UTILITY->value => 1,
+            ],
+        };
+    }
+
     public static function fromRole(int $role): self
     {
         return match ($role) {
