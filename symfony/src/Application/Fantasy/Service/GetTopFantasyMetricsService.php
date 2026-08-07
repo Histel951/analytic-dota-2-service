@@ -114,6 +114,7 @@ final readonly class GetTopFantasyMetricsService
                             players: $playersDtos,
                             avgCombinedScore: $combo->getAvgCombinedScore(),
                             matchesCount: $combo->getMatchesCount(),
+                            avgMatchDuration: $combo->getAvgMatchDuration(),
                         );
                     },
                     $recommendation->getTopCombos()

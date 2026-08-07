@@ -87,6 +87,10 @@ services:
     App\Domain\Fantasy\Repository\FantasyMetricAnalysisRepository:
         alias: App\Infrastructure\ClickHouse\Repository\ClickHouseFantasyMetricAnalysisRepository
 
+    App\UI\Console\Fantasy\ExportTopFantasyMetricsCommand:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
     # Fantasy Scoring Configuration
     App\Domain\Match\ValueObject\FantasyScoringConfig:
         arguments:

@@ -18,6 +18,7 @@ final readonly class TopComboRecommendation
         private array $players,
         private float $avgCombinedScore,
         private int $matchesCount,
+        private float $avgMatchDuration,
     ) {
         if (empty($players)) {
             throw new \InvalidArgumentException('Players array cannot be empty');
@@ -69,5 +70,10 @@ final readonly class TopComboRecommendation
     public function getMatchesCount(): int
     {
         return $this->matchesCount;
+    }
+
+    public function getAvgMatchDuration(): float
+    {
+        return $this->avgMatchDuration;
     }
 }

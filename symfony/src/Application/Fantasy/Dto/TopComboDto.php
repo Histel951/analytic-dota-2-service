@@ -15,6 +15,7 @@ final readonly class TopComboDto
         private array $players,
         private float $avgCombinedScore,
         private int $matchesCount,
+        private float $avgMatchDuration,
     ) {}
 
     public function toArray(): array
@@ -25,6 +26,7 @@ final readonly class TopComboDto
             'players' => array_map(fn($p) => $p->toArray(), $this->players),
             'avg_combined_score' => round($this->avgCombinedScore, 2),
             'matches_count' => $this->matchesCount,
+            'avg_match_duration' => round($this->avgMatchDuration, 2),
         ];
     }
 }

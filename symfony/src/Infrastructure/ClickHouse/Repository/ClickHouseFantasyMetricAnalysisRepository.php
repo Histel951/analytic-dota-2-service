@@ -499,17 +499,19 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
             ),
             {$limitedMatchesCte}
             SELECT 
-                pmf.player_id as player_id,
-                ep.opendota_team_id as opendota_team_id,
-                {$role} as role,
+                pmf.player_id AS player_id,
+                ep.opendota_team_id AS opendota_team_id,
+                {$role} AS role,
                 {$metricSelectsStr},
-                avg(pmf.total_score) as avg_total_score,
-                count(*) as matches_count
+                avg(pmf.total_score) AS avg_total_score,
+                count(*) AS matches_count,
+                avg(lm.duration) AS avg_match_duration
             FROM player_match_fantasy_stats pmf
             INNER JOIN limited_matches lm 
                 ON pmf.match_id = lm.match_id AND pmf.player_id = lm.player_id
             INNER JOIN eligible_players ep
                 ON pmf.player_id = ep.player_id
+               AND ep.opendota_team_id = lm.opendota_team_id
             GROUP BY player_id, opendota_team_id
             ORDER BY avg_total_score DESC
         ";
@@ -626,33 +628,37 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
                     ep.role as role,
                     {$metricSelectsStr},
                     avg(pmf.total_score) as avg_total_score,
-                    count(*) as matches_count
+                    count(*) as matches_count,
+                    avg(lm.duration) as avg_match_duration
                 FROM player_match_fantasy_stats pmf
                 INNER JOIN limited_matches lm 
                     ON pmf.match_id = lm.match_id AND pmf.player_id = lm.player_id
                 INNER JOIN eligible_players ep
                     ON pmf.player_id = ep.player_id
+                   AND ep.opendota_team_id = lm.opendota_team_id
                 GROUP BY player_id, opendota_team_id, role
             ),
             team_combos AS (
                 SELECT 
-                    opendota_team_id,
+                    opendota_team_id as opendota_team_id,
                     sum(avg_total_score) as combined_score,
                     min(matches_count) as min_matches_count,
-                    count(*) as players_in_combo
+                    count(*) as players_in_combo,
+                    avg(avg_match_duration) as avg_match_duration
                 FROM player_metrics
                 GROUP BY opendota_team_id
                 HAVING players_in_combo >= 1
             )
             SELECT 
-                pm.opendota_team_id,
-                pm.player_id,
-                pm.role,
-                pm.avg_total_score,
-                pm.matches_count,
-                " . implode(",\n                ", array_map(fn($m) => "pm.avg_{$m}", self::FANTASY_METRICS)) . ",
-                tc.combined_score,
-                tc.min_matches_count
+                pm.opendota_team_id AS opendota_team_id,
+                pm.player_id AS player_id,
+                pm.role AS role,
+                pm.avg_total_score AS avg_total_score,
+                pm.matches_count AS matches_count,
+                " . implode(",\n                ", array_map(fn($m) => "pm.avg_{$m} AS avg_{$m}", self::FANTASY_METRICS)) . ",
+                tc.combined_score AS combined_score,
+                tc.min_matches_count AS min_matches_count,
+                tc.avg_match_duration AS avg_match_duration
             FROM player_metrics pm
             INNER JOIN team_combos tc ON pm.opendota_team_id = tc.opendota_team_id
             ORDER BY tc.combined_score DESC, pm.opendota_team_id, pm.role
@@ -717,6 +723,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
                 players: $players,
                 avgCombinedScore: (float) $row['avg_total_score'],
                 matchesCount: (int) $row['matches_count'],
+                avgMatchDuration: (float) $row['avg_match_duration'],
             );
         }
 
@@ -744,6 +751,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
                 $teamGroups[$teamId] = [
                     'combined_score' => (float) $row['combined_score'],
                     'min_matches_count' => (int) $row['min_matches_count'],
+                    'avg_match_duration' => (float) $row['avg_match_duration'],
                     'players' => [],
                 ];
             }
@@ -769,6 +777,7 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
                 players: $group['players'],
                 avgCombinedScore: $group['combined_score'],
                 matchesCount: $group['min_matches_count'],
+                avgMatchDuration: $group['avg_match_duration'],
             );
         }
 
@@ -791,7 +800,9 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
                     SELECT 
                         pms.match_id,
                         pms.player_id,
-                        pms.start_time
+                        pms.start_time,
+                        pms.duration,
+                        pms.opendota_team_id
                     FROM player_match_stats pms
                     WHERE {$whereClause}
                       AND pms.player_id IN ({$eligiblePlayersFilter})
@@ -816,7 +827,9 @@ final readonly class ClickHouseFantasyMetricAnalysisRepository implements Fantas
                 SELECT 
                     pms.match_id,
                     pms.player_id,
-                    pms.start_time
+                    pms.start_time,
+                    pms.duration,
+                    pms.opendota_team_id
                 FROM player_match_stats pms
                 INNER JOIN limited_team_matches ltm
                     ON pms.match_id = ltm.match_id
