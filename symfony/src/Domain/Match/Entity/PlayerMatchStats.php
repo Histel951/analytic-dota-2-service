@@ -29,7 +29,7 @@ use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\LastHits;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\NeutralCreeps;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserversDestroyed;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserversPlaced;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserverTakeovers;
+use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\Watchers;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\RoshanKills;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\RunePickups;
 use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SentryDestroyed;
@@ -78,7 +78,7 @@ final readonly class PlayerMatchStats
         private ObserversDestroyed $observersDestroyed,
         private SentryPlaced $sentryPlaced,
         private SentryDestroyed $sentryDestroyed,
-        private ObserverTakeovers $observerTakeovers,
+        private Watchers $observerTakeovers,
 
         private HeroDamage $heroDamage,
         private TowerDamage $towerDamage,
@@ -240,7 +240,7 @@ final readonly class PlayerMatchStats
         return $this->sentryDestroyed;
     }
 
-    public function getObserverTakeovers(): ObserverTakeovers
+    public function getObserverTakeovers(): Watchers
     {
         return $this->observerTakeovers;
     }

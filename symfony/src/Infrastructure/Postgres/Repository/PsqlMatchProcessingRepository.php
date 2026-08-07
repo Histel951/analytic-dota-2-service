@@ -76,4 +76,31 @@ final readonly class PsqlMatchProcessingRepository implements MatchProcessingRep
             createdAt: $data['created_at'] ? new DateTimeImmutable($data['created_at']) : null,
         );
     }
+
+    /**
+     * @return MatchProcessing[]
+     * @throws Exception
+     */
+    public function findByStatus(MatchProcessingStatus $status): array
+    {
+        $rows = $this->connection->fetchAllAssociative(
+            'SELECT * FROM ' . self::TABLE . ' WHERE status = ? ORDER BY parsed_at DESC',
+            [$status->value]
+        );
+
+        $result = [];
+        foreach ($rows as $data) {
+            $result[] = new MatchProcessing(
+                matchId: new MatchId($data['match_id']),
+                parsedAt: new DateTimeImmutable($data['parsed_at']),
+                fetchedAt: $data['fetched_at'] ? new DateTimeImmutable($data['fetched_at']) : null,
+                analyticsProcessedAt: $data['analytics_processed_at'] ? new DateTimeImmutable($data['analytics_processed_at']) : null,
+                fantasyProcessedAt: $data['fantasy_processed_at'] ? new DateTimeImmutable($data['fantasy_processed_at']) : null,
+                status: MatchProcessingStatus::from($data['status']),
+                createdAt: $data['created_at'] ? new DateTimeImmutable($data['created_at']) : null,
+            );
+        }
+
+        return $result;
+    }
 }

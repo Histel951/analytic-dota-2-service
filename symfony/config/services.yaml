@@ -80,6 +80,17 @@ services:
     App\Domain\Team\Repository\TeamMatchRepository:
         alias: App\Infrastructure\Postgres\Repository\PsqlTeamMatchRepository
 
+    App\Infrastructure\ClickHouse\Repository\ClickHouseFantasyMetricAnalysisRepository:
+        arguments:
+            $clickhouse: '@ClickHouseDB\Client'
+
+    App\Domain\Fantasy\Repository\FantasyMetricAnalysisRepository:
+        alias: App\Infrastructure\ClickHouse\Repository\ClickHouseFantasyMetricAnalysisRepository
+
+    App\UI\Console\Fantasy\ExportTopFantasyMetricsCommand:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
     # Fantasy Scoring Configuration
     App\Domain\Match\ValueObject\FantasyScoringConfig:
         arguments:
