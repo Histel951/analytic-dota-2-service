@@ -16,8 +16,8 @@ use App\Domain\Fantasy\ValueObject\PlayerMetrics;
 use App\Domain\Match\Repository\MatchPlayersRepository;
 use ClickHouseDB\Client;
 use DateTimeImmutable;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\PlayerId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
+use App\Shared\Domain\PlayerId;
+use App\Shared\Domain\TeamId;
 
 final readonly class ClickHouseFantasyMetricAnalysisRepository implements FantasyMetricAnalysisRepository
 {

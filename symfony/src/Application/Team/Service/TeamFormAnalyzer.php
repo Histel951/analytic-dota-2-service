@@ -10,9 +10,8 @@ use App\Domain\Team\Enum\TeamForm;
 use App\Domain\Team\Repository\TeamMatchRepository;
 use App\Domain\Team\ValueObjects\Winrate;
 use DateTimeImmutable;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\Region;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamName;
+use App\Shared\Domain\Region\Region;
+use App\Shared\Domain\TeamId;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -97,7 +96,7 @@ final readonly class TeamFormAnalyzer
 
         return new TeamFormAnalysis(
             teamId: $teamId,
-            teamName: new TeamName(sprintf('Team %d', $teamId->getValue())),
+            teamName: sprintf('Team %d', $teamId->getValue()),
             form: $form,
             winrate: $winrate,
             region: $mostCommonRegion,

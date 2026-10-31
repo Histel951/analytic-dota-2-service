@@ -6,7 +6,7 @@ namespace App\Infrastructure\ClickHouse\Repository;
 use App\Domain\PlayerStats\Entity\PlayerMetric;
 use App\Domain\PlayerStats\Repository\PlayerStatsReadRepository;
 use ClickHouseDB\Client;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\PlayerId;
+use App\Shared\Domain\PlayerId;
 
 final readonly class ClickHousePlayerStatsReadRepository implements PlayerStatsReadRepository
 {

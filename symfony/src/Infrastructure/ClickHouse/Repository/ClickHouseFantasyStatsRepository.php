@@ -6,8 +6,8 @@ namespace App\Infrastructure\ClickHouse\Repository;
 use App\Domain\Match\Dto\FantasyScoreResult;
 use App\Domain\Match\Repository\FantasyStatsRepository;
 use ClickHouseDB\Client;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\PlayerId;
+use App\Shared\Domain\MatchId;
+use App\Shared\Domain\PlayerId;
 
 final readonly class ClickHouseFantasyStatsRepository implements FantasyStatsRepository
 {

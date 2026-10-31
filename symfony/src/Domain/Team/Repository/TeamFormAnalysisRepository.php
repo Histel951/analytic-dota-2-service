@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Domain\Team\Repository;
 
 use App\Domain\Team\Entity\TeamFormAnalysis;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
+use App\Shared\Domain\TeamId;
 
 interface TeamFormAnalysisRepository
 {

@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace App\Domain\Match\Entity;
 
 use DateTimeImmutable;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\Region;
+use App\Shared\Domain\MatchId;
+use App\Shared\Domain\Region\Region;
 
 final class MatchEntity
 {

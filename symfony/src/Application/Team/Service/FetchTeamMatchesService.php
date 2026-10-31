@@ -7,16 +7,16 @@ use App\Application\Match\Message\ParseMatchMessage;
 use App\Application\Team\Exception\InvalidDateRangeException;
 use App\Domain\Team\Entity\TeamMatch;
 use App\Domain\Team\Repository\TeamMatchRepository;
+use App\Domain\Team\Source\TeamMatchesSource;
+use App\Shared\Domain\TeamId;
 use DateTimeImmutable;
-use Histel951\Dota2Api\Client\Dota2ApiClient;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 final readonly class FetchTeamMatchesService
 {
     public function __construct(
-        private Dota2ApiClient $dota2ApiClient,
+        private TeamMatchesSource $teamMatchesSource,
         private MessageBusInterface $messageBus,
         private TeamMatchRepository $teamMatchRepository,
         private LoggerInterface $logger,
@@ -43,56 +43,39 @@ final readonly class FetchTeamMatchesService
         ]);
 
         try {
-            $teamMatches = $this->dota2ApiClient
-                ->teams()
-                ->getMatchesByTeam(new TeamId($teamId));
+            $teamMatches = $this->teamMatchesSource->listByTeam(new TeamId($teamId));
 
             $processedCount = 0;
-            $skippedCount = 0;
             $teamMatchEntities = [];
 
-            foreach ($teamMatches as $index => $match) {
-                try {
-                    if ($limit !== null && $processedCount >= $limit) {
-                        break;
-                    }
+            foreach ($teamMatches as $match) {
+                if ($limit !== null && $processedCount >= $limit) {
+                    break;
+                }
 
-                    if (!$this->isMatchInDateRange($match->getStartTime(), $dateFrom, $dateTo)) {
-                        continue;
-                    }
-
-                    $matchId = $match->getMatchId()->getValue();
-                    
-                    $this->messageBus->dispatch(new ParseMatchMessage($matchId));
-                    
-                    $teamMatchEntity = new TeamMatch(
-                        teamId: new TeamId($teamId),
-                        matchId: $match->getMatchId(),
-                        isWin: $match->matchOutcome()->isWon(),
-                    );
-                    $teamMatchEntities[] = $teamMatchEntity;
-                    
-                    $this->logger->debug('Match dispatched for processing', [
-                        'match_id' => $matchId,
-                        'team_id' => $teamId,
-                        'match_start_time' => $match->getStartTime()->format('Y-m-d H:i:s'),
-                        'is_win' => $match->matchOutcome()->isWon(),
-                    ]);
-
-                    $processedCount++;
-
-                } catch (\TypeError $e) {
-                    $skippedCount++;
-                    
-                    $this->logger->warning('Skipped match due to API library error', [
-                        'team_id' => $teamId,
-                        'match_index' => $index,
-                        'error' => $e->getMessage(),
-                        'note' => 'This is a known issue in histel951/dota-2-api library mapper',
-                    ]);
-                    
+                if (!$this->isMatchInDateRange($match->getStartTime(), $dateFrom, $dateTo)) {
                     continue;
                 }
+
+                $matchId = $match->getMatchId()->getValue();
+
+                $this->messageBus->dispatch(new ParseMatchMessage($matchId));
+
+                $teamMatchEntity = new TeamMatch(
+                    teamId: new TeamId($teamId),
+                    matchId: $match->getMatchId(),
+                    isWin: $match->isWon(),
+                );
+                $teamMatchEntities[] = $teamMatchEntity;
+
+                $this->logger->debug('Match dispatched for processing', [
+                    'match_id' => $matchId,
+                    'team_id' => $teamId,
+                    'match_start_time' => $match->getStartTime()->format('Y-m-d H:i:s'),
+                    'is_win' => $match->isWon(),
+                ]);
+
+                $processedCount++;
             }
 
             if (!empty($teamMatchEntities)) {
@@ -107,7 +90,6 @@ final readonly class FetchTeamMatchesService
             $this->logger->info('Team matches dispatched successfully', [
                 'team_id' => $teamId,
                 'matches_count' => $processedCount,
-                'skipped_count' => $skippedCount,
             ]);
 
             return $processedCount;

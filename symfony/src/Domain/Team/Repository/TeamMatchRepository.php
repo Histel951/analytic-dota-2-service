@@ -5,8 +5,8 @@ namespace App\Domain\Team\Repository;
 
 use App\Domain\Team\Entity\TeamMatch;
 use DateTimeImmutable;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
+use App\Shared\Domain\MatchId;
+use App\Shared\Domain\TeamId;
 
 interface TeamMatchRepository
 {

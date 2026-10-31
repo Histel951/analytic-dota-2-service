@@ -117,12 +117,13 @@ services:
         arguments:
             $config: '@App\Domain\Match\ValueObject\FantasyScoringConfig'
 
-    Histel951\Dota2Api\Client\Dota2ApiClient:
-        autowire: true
-        lazy: false
+    # Внешние источники данных: какой адаптер обслуживает сценарий (OpenDota | STRATZ).
+    # Dota2ApiClient регистрирует бандл dota-api; используется только адаптерами App\Infrastructure\OpenDota.
+    App\Domain\Match\Source\MatchSource:
+        alias: App\Infrastructure\OpenDota\OpenDotaMatchSource
 
-    Histel951\Dota2Api\Domain\Services\RegionResolverInterface:
-        class: Histel951\Dota2Api\Infrastructure\Services\RegionResolver
+    App\Domain\Team\Source\TeamMatchesSource:
+        alias: App\Infrastructure\OpenDota\OpenDotaTeamMatchesSource
 
     App\Infrastructure\Kafka\Config\KafkaTopicsConfig:
         arguments:

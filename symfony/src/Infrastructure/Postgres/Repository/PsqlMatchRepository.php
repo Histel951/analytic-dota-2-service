@@ -8,9 +8,9 @@ use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\Types\Types;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\Region;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
+use App\Shared\Domain\MatchId;
+use App\Shared\Domain\Region\Region;
+use App\Shared\Domain\TeamId;
 
 final readonly class PsqlMatchRepository implements MatchRepository
 {

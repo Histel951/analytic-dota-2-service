@@ -5,7 +5,7 @@ namespace App\Domain\Fantasy\Entity;
 
 use App\Domain\Fantasy\ValueObject\PlayerAnalyzedMatch;
 use App\Domain\Fantasy\ValueObject\PlayerMetrics;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\PlayerId;
+use App\Shared\Domain\PlayerId;
 
 final readonly class PlayerInCombo
 {

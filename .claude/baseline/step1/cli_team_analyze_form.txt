@@ -1,0 +1,26 @@
+Анализ формы команд
+===================
+ [INFO] Анализ 4 команд                                                         
+Команды для анализа:
+ * Team ID: 8261500
+ * Team ID: 2586976
+ * Team ID: 2163
+ * Team ID: 8291895
+ [OK] Анализ завершен: успешно - 4, ошибок - 0                                  
+ ! [NOTE] Результаты анализа сохранены в ClickHouse.                            
+ !                                                                              
+ !                                                                              
+ !                                                                              
+ !        Просмотр фаворитов:                                                   
+ !                                                                              
+ !          SELECT team_name, form, winrate, region FROM team_form_analysis     
+ !                                                                              
+ !          WHERE form IN ('prime', 'high') ORDER BY winrate DESC LIMIT 10;     
+ !                                                                              
+ !                                                                              
+ !                                                                              
+ !        Просмотр аутсайдеров:                                                 
+ !                                                                              
+ !          SELECT team_name, form, winrate, region FROM team_form_analysis     
+ !                                                                              
+ !          WHERE form IN ('low', 'medium') ORDER BY winrate ASC LIMIT 10;      

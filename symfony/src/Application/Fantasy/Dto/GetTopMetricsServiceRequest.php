@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace App\Application\Fantasy\Dto;
 
 use DateTimeImmutable;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\PlayerId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
+use App\Shared\Domain\PlayerId;
+use App\Shared\Domain\TeamId;
 
 final readonly class GetTopMetricsServiceRequest
 {

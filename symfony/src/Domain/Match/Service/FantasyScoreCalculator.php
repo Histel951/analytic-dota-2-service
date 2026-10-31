@@ -19,22 +19,22 @@ final readonly class FantasyScoreCalculator
         $killsScore = $this->calculateKillsScore($stats->getKills());
         $deathsScore = $this->calculateDeathsScore($stats->getDeaths());
         $creepsScore = $this->calculateCreepsScore(
-            $stats->getCreepsLastHits()->getValue(),
-            $stats->getCreepsDenies()->getValue()
+            $stats->getCreepsLastHits(),
+            $stats->getCreepsDenies()
         );
-        $gpmScore = $this->calculateGpmScore($stats->getGpm()->getValue());
-        $towerScore = $this->calculateTowerScore($stats->getTowerKills()->getValue());
-        $observerScore = $this->calculateObserverScore($stats->getObserversPlaced()->getValue());
-        $stacksScore = $this->calculateStacksScore($stats->getCampsStacked()->getValue());
-        $runeScore = $this->calculateRuneScore($stats->getRunePickups()->getValue());
-        $roshanScore = $this->calculateRoshanScore($stats->getRoshanKills()->getValue());
-        $courierScore = $this->calculateCourierScore($stats->getCourierKills()->getValue());
-        $stunScore = $this->calculateStunScore($stats->getStuns()->getValue());
+        $gpmScore = $this->calculateGpmScore($stats->getGpm());
+        $towerScore = $this->calculateTowerScore($stats->getTowerKills());
+        $observerScore = $this->calculateObserverScore($stats->getObserversPlaced());
+        $stacksScore = $this->calculateStacksScore($stats->getCampsStacked());
+        $runeScore = $this->calculateRuneScore($stats->getRunePickups());
+        $roshanScore = $this->calculateRoshanScore($stats->getRoshanKills());
+        $courierScore = $this->calculateCourierScore($stats->getCourierKills());
+        $stunScore = $this->calculateStunScore($stats->getStuns());
         $firstBloodScore = $this->calculateFirstBloodScore($stats->isFirstBloodClaimed());
-        $teamfightScore = $this->calculateTeamfightScore($stats->getTeamfightParticipation()->getValue());
-        $tormentorScore = $this->calculateTormentorScore($stats->getTormentorKills()->getValue());
-        $smokeScore = $this->calculateSmokeScore($stats->getSmokeUses()->getValue());
-        $watcherScore = $this->calculateWatcherScore($stats->getObserverTakeovers()->getValue());
+        $teamfightScore = $this->calculateTeamfightScore($stats->getTeamfightParticipation());
+        $tormentorScore = $this->calculateTormentorScore($stats->getTormentorKills());
+        $smokeScore = $this->calculateSmokeScore($stats->getSmokeUses());
+        $watcherScore = $this->calculateWatcherScore($stats->getObserverTakeovers());
 
         $totalScore = $killsScore
             + $deathsScore

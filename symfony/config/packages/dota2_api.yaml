@@ -1,5 +1,10 @@
 dota2_api:
-  base_url: 'https://api.opendota.com/api/'
-  api_key: null
   timeout: 30
-  source: 'opendota'
+  max_retries: 3
+  opendota:
+    base_url: 'https://api.opendota.com/api/'
+    api_key: '%env(default::OPENDOTA_API_KEY)%'
+  stratz:
+    base_url: 'https://api.stratz.com/graphql'
+    token: '%env(default::STRATZ_TOKEN)%'
+    # rate_limit: 140   # запросов/мин на процесс; при N воркерах — ~140 / N

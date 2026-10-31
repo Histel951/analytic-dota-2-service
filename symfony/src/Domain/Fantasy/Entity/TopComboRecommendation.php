@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Domain\Fantasy\Entity;
 
 use App\Domain\Fantasy\ValueObject\MetricContribution;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
+use App\Shared\Domain\TeamId;
 
 final readonly class TopComboRecommendation
 {

@@ -3,14 +3,12 @@ declare(strict_types=1);
 
 namespace App\Application\Match\Handler;
 
-use App\Application\Match\Extractor\PlayerMatchExtractor;
 use App\Application\Match\Message\MatchAnalyticsProcessedMessage;
 use App\Application\Match\Message\MatchFailedMessage;
 use App\Application\Match\Message\MatchFetchedMessage;
 use App\Domain\Match\Repository\AnalyticMatchRepository;
 use App\Domain\Match\Repository\MatchProcessingRepository;
-use DateTimeImmutable;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
+use App\Shared\Domain\MatchId;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -20,7 +18,6 @@ use Throwable;
 final readonly class ProcessMatchAnalyticsHandler
 {
     public function __construct(
-        private PlayerMatchExtractor $extractor,
         private AnalyticMatchRepository $analyticMatchRepository,
         private MatchProcessingRepository $processingRepository,
         private MessageBusInterface $messageBus,
@@ -33,8 +30,7 @@ final readonly class ProcessMatchAnalyticsHandler
         $matchId = new MatchId($message->getMatchId());
 
         try {
-            $matchDetail = $message->getMatchDetail();
-            $playersMatchData = $this->extractor->extract($matchDetail);
+            $playersMatchData = $message->getMatch()->getPlayerStats();
 
             $this->analyticMatchRepository->insertMultiplyMatchStats($playersMatchData);
 
@@ -47,7 +43,7 @@ final readonly class ProcessMatchAnalyticsHandler
             $this->messageBus->dispatch(
                 new MatchAnalyticsProcessedMessage(
                     matchId: $message->getMatchId(),
-                    serializedMatchDetail: $message->getSerializedMatchDetail()
+                    serializedMatch: $message->getSerializedMatch()
                 )
             );
 

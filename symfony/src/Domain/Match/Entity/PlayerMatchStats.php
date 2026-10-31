@@ -1,101 +1,64 @@
 <?php
+
 declare(strict_types = 1);
 
 namespace App\Domain\Match\Entity;
 
+use App\Shared\Domain\MatchId;
+use App\Shared\Domain\PlayerId;
+use App\Shared\Domain\PlayerRole;
+use App\Shared\Domain\Side;
+use App\Shared\Domain\TeamId;
 use DateTimeImmutable;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\Duration;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\GoldSpent;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\GPM;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\HeroId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\NetWorth;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\PlayerId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\Role;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TotalGold;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TotalXP;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\XPM;
-use Histel951\Dota2Api\Domain\Entities\Match\Enums\Side;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\AncientCreeps;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\BuybackCount;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\CampsStacked;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\CourierKills;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\Denies;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\HeroDamage;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\HeroHealing;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\LaneCreeps;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\LastHits;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\NeutralCreeps;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserversDestroyed;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserversPlaced;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\Watchers;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\RoshanKills;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\RunePickups;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SentryDestroyed;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SentryPlaced;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SmokeUses;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\Stuns;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TeamfightParticipation;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TormentorKills;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TowerDamage;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TowerKills;
 
+/**
+ * Статистика игрока в матче — строка player_match_stats.
+ * Счётчики — неотрицательные целые, stuns — секунды, teamfightParticipation — доля 0..1.
+ */
 final readonly class PlayerMatchStats
 {
     public function __construct(
         private MatchId $matchId,
-        private Duration $duration,
+        private int $durationSeconds,
         private PlayerId $playerId,
-
-        private HeroId $openDotaHeroId,
+        private int $openDotaHeroId,
         private TeamId $openDotaTeamId,
-
         private int $kills,
         private int $deaths,
         private int $assists,
-
-        private GPM $gpm,
-        private XPM $xpm,
-        private NetWorth $netWorth,
-        private TotalGold $totalGold,
-        private TotalXP $totalXp,
-        private GoldSpent $goldSpend,
-
-        private LastHits $creepsLastHits,
-        private LaneCreeps $creepsLaneLastHits,
-        private Denies $creepsDenies,
-        private NeutralCreeps $creepsNeutrals,
-        private AncientCreeps $creepsAncients,
-        private CampsStacked $campsStacked,
-
-        private RoshanKills $roshanKills,
-        private TowerKills $towerKills,
-        private RunePickups $runePickups,
-        private TormentorKills $tormentorKills,
-
-        private ObserversPlaced $observersPlaced,
-        private ObserversDestroyed $observersDestroyed,
-        private SentryPlaced $sentryPlaced,
-        private SentryDestroyed $sentryDestroyed,
-        private Watchers $observerTakeovers,
-
-        private HeroDamage $heroDamage,
-        private TowerDamage $towerDamage,
-        private HeroHealing $heroHealing,
-
-        private BuybackCount $buybackCount,
+        private int $gpm,
+        private int $xpm,
+        private int $netWorth,
+        private int $totalGold,
+        private int $totalXp,
+        private int $goldSpend,
+        private int $creepsLastHits,
+        private int $creepsLaneLastHits,
+        private int $creepsDenies,
+        private int $creepsNeutrals,
+        private int $creepsAncients,
+        private int $campsStacked,
+        private int $roshanKills,
+        private int $towerKills,
+        private int $runePickups,
+        private int $tormentorKills,
+        private int $observersPlaced,
+        private int $observersDestroyed,
+        private int $sentryPlaced,
+        private int $sentryDestroyed,
+        private int $observerTakeovers,
+        private int $heroDamage,
+        private int $towerDamage,
+        private int $heroHealing,
+        private int $buybackCount,
         private bool $firstBloodClaimed,
-        private CourierKills $courierKills,
-        private Stuns $stuns,
-        private TeamfightParticipation $teamfightParticipation,
-        private SmokeUses $smokeUses,
-
+        private int $courierKills,
+        private float $stuns,
+        private float $teamfightParticipation,
+        private int $smokeUses,
         private Side $side,
         private bool $win,
-
-        private Role $role,
-
+        private PlayerRole $role,
         private DateTimeImmutable $startTime,
     ) {
     }
@@ -105,9 +68,9 @@ final readonly class PlayerMatchStats
         return $this->matchId;
     }
 
-    public function getDuration(): Duration
+    public function getDurationSeconds(): int
     {
-        return $this->duration;
+        return $this->durationSeconds;
     }
 
     public function getPlayerId(): PlayerId
@@ -115,7 +78,7 @@ final readonly class PlayerMatchStats
         return $this->playerId;
     }
 
-    public function getOpenDotaHeroId(): HeroId
+    public function getOpenDotaHeroId(): int
     {
         return $this->openDotaHeroId;
     }
@@ -140,127 +103,127 @@ final readonly class PlayerMatchStats
         return $this->assists;
     }
 
-    public function getGpm(): GPM
+    public function getGpm(): int
     {
         return $this->gpm;
     }
 
-    public function getXpm(): XPM
+    public function getXpm(): int
     {
         return $this->xpm;
     }
 
-    public function getNetWorth(): NetWorth
+    public function getNetWorth(): int
     {
         return $this->netWorth;
     }
 
-    public function getTotalGold(): TotalGold
+    public function getTotalGold(): int
     {
         return $this->totalGold;
     }
 
-    public function getTotalXp(): TotalXP
+    public function getTotalXp(): int
     {
         return $this->totalXp;
     }
 
-    public function getGoldSpend(): GoldSpent
+    public function getGoldSpend(): int
     {
         return $this->goldSpend;
     }
 
-    public function getCreepsLastHits(): LastHits
+    public function getCreepsLastHits(): int
     {
         return $this->creepsLastHits;
     }
 
-    public function getCreepsLaneLastHits(): LaneCreeps
+    public function getCreepsLaneLastHits(): int
     {
         return $this->creepsLaneLastHits;
     }
 
-    public function getCreepsDenies(): Denies
+    public function getCreepsDenies(): int
     {
         return $this->creepsDenies;
     }
 
-    public function getCreepsNeutrals(): NeutralCreeps
+    public function getCreepsNeutrals(): int
     {
         return $this->creepsNeutrals;
     }
 
-    public function getCreepsAncients(): AncientCreeps
+    public function getCreepsAncients(): int
     {
         return $this->creepsAncients;
     }
 
-    public function getCampsStacked(): CampsStacked
+    public function getCampsStacked(): int
     {
         return $this->campsStacked;
     }
 
-    public function getRoshanKills(): RoshanKills
+    public function getRoshanKills(): int
     {
         return $this->roshanKills;
     }
 
-    public function getTowerKills(): TowerKills
+    public function getTowerKills(): int
     {
         return $this->towerKills;
     }
 
-    public function getRunePickups(): RunePickups
+    public function getRunePickups(): int
     {
         return $this->runePickups;
     }
 
-    public function getTormentorKills(): TormentorKills
+    public function getTormentorKills(): int
     {
         return $this->tormentorKills;
     }
 
-    public function getObserversPlaced(): ObserversPlaced
+    public function getObserversPlaced(): int
     {
         return $this->observersPlaced;
     }
 
-    public function getObserversDestroyed(): ObserversDestroyed
+    public function getObserversDestroyed(): int
     {
         return $this->observersDestroyed;
     }
 
-    public function getSentryPlaced(): SentryPlaced
+    public function getSentryPlaced(): int
     {
         return $this->sentryPlaced;
     }
 
-    public function getSentryDestroyed(): SentryDestroyed
+    public function getSentryDestroyed(): int
     {
         return $this->sentryDestroyed;
     }
 
-    public function getObserverTakeovers(): Watchers
+    public function getObserverTakeovers(): int
     {
         return $this->observerTakeovers;
     }
 
-    public function getHeroDamage(): HeroDamage
+    public function getHeroDamage(): int
     {
         return $this->heroDamage;
     }
 
-    public function getTowerDamage(): TowerDamage
+    public function getTowerDamage(): int
     {
         return $this->towerDamage;
     }
 
-    public function getHeroHealing(): HeroHealing
+    public function getHeroHealing(): int
     {
         return $this->heroHealing;
     }
 
-    public function getBuybackCount(): BuybackCount
+    public function getBuybackCount(): int
     {
         return $this->buybackCount;
     }
@@ -270,22 +233,22 @@ final readonly class PlayerMatchStats
         return $this->firstBloodClaimed;
     }
 
-    public function getCourierKills(): CourierKills
+    public function getCourierKills(): int
     {
         return $this->courierKills;
     }
 
-    public function getStuns(): Stuns
+    public function getStuns(): float
     {
         return $this->stuns;
     }
 
-    public function getTeamfightParticipation(): TeamfightParticipation
+    public function getTeamfightParticipation(): float
     {
         return $this->teamfightParticipation;
     }
 
-    public function getSmokeUses(): SmokeUses
+    public function getSmokeUses(): int
     {
         return $this->smokeUses;
     }
@@ -300,7 +263,7 @@ final readonly class PlayerMatchStats
         return $this->win;
     }
 
-    public function getRole(): Role
+    public function getRole(): PlayerRole
     {
         return $this->role;
     }

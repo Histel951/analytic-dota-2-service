@@ -9,10 +9,9 @@ use App\Domain\Team\Repository\TeamFormAnalysisRepository;
 use App\Domain\Team\ValueObjects\Winrate;
 use App\Infrastructure\ClickHouse\ClickHouseFactory;
 use DateTimeImmutable;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\Region;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamName;
+use App\Shared\Domain\MatchId;
+use App\Shared\Domain\Region\Region;
+use App\Shared\Domain\TeamId;
 
 final readonly class ClickHouseTeamFormAnalysisRepository implements TeamFormAnalysisRepository
 {
@@ -31,7 +30,7 @@ final readonly class ClickHouseTeamFormAnalysisRepository implements TeamFormAna
 
         $db->insert('team_form_analysis', [[
             'team_id' => $analysis->getTeamId()->getValue(),
-            'team_name' => $analysis->getTeamName()->getValue() ?? 'Unknown',
+            'team_name' => $analysis->getTeamName(),
             'form' => $analysis->getForm()->value,
             'winrate' => $analysis->getWinrate()->getValue(),
             'region' => $analysis->getRegion()->getName(),
@@ -112,7 +111,7 @@ final readonly class ClickHouseTeamFormAnalysisRepository implements TeamFormAna
 
         return new TeamFormAnalysis(
             teamId: new TeamId($row['team_id']),
-            teamName: new TeamName($row['team_name']),
+            teamName: $row['team_name'],
             form: TeamForm::from($row['form']),
             winrate: new Winrate($row['winrate']),
             region: new Region(0, $row['region'], strtolower($row['region'])),

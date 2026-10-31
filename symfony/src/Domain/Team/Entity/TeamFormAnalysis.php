@@ -6,16 +6,15 @@ namespace App\Domain\Team\Entity;
 use App\Domain\Team\Enum\TeamForm;
 use App\Domain\Team\ValueObjects\Winrate;
 use DateTimeImmutable;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\Region;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamName;
+use App\Shared\Domain\MatchId;
+use App\Shared\Domain\Region\Region;
+use App\Shared\Domain\TeamId;
 
 final readonly class TeamFormAnalysis
 {
     /**
      * @param TeamId $teamId
-     * @param TeamName $teamName
+     * @param string $teamName
      * @param TeamForm $form
      * @param Winrate $winrate
      * @param Region $region
@@ -25,7 +24,7 @@ final readonly class TeamFormAnalysis
      */
     public function __construct(
         private TeamId $teamId,
-        private TeamName $teamName,
+        private string $teamName,
         private TeamForm $form,
         private Winrate $winrate,
         private Region $region,
@@ -39,7 +38,7 @@ final readonly class TeamFormAnalysis
         return $this->teamId;
     }
 
-    public function getTeamName(): TeamName
+    public function getTeamName(): string
     {
         return $this->teamName;
     }
