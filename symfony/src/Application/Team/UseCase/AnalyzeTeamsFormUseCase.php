@@ -7,7 +7,7 @@ use App\Application\Team\Dto\TeamFormResult;
 use App\Application\Team\Service\TeamFormAnalyzer;
 use App\Domain\Team\Repository\TeamFormAnalysisRepository;
 use DateTimeImmutable;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
+use App\Shared\Domain\TeamId;
 use Psr\Log\LoggerInterface;
 
 final readonly class AnalyzeTeamsFormUseCase

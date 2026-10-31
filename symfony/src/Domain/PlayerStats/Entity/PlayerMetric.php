@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Domain\PlayerStats\Entity;
 
-use Histel951\Dota2Api\Domain\Common\ValueObjects\PlayerId;
+use App\Shared\Domain\PlayerId;
 
 final readonly class PlayerMetric
 {

@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace App\Application\Match\Message;
 
-use Histel951\Dota2Api\Domain\Entities\Match\MatchDetail;
+use App\Domain\Match\Entity\ImportedMatch;
 
 final readonly class MatchAnalyticsProcessedMessage
 {
     public function __construct(
         private int $matchId,
-        private string $serializedMatchDetail,
+        private string $serializedMatch,
     ) {
     }
 
@@ -18,13 +18,13 @@ final readonly class MatchAnalyticsProcessedMessage
         return $this->matchId;
     }
 
-    public function getSerializedMatchDetail(): string
+    public function getSerializedMatch(): string
     {
-        return $this->serializedMatchDetail;
+        return $this->serializedMatch;
     }
 
-    public function getMatchDetail(): MatchDetail
+    public function getMatch(): ImportedMatch
     {
-        return unserialize($this->serializedMatchDetail);
+        return unserialize($this->serializedMatch);
     }
 }

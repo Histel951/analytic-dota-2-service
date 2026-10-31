@@ -9,10 +9,10 @@ use App\Application\Match\Message\ParseMatchMessage;
 use App\Domain\Match\Entity\MatchProcessing;
 use App\Domain\Match\Enum\MatchProcessingStatus;
 use App\Domain\Match\Repository\MatchProcessingRepository;
+use App\Domain\Match\Source\MatchSource;
+use App\Shared\Domain\Exception\InvalidMatchIdException;
+use App\Shared\Domain\MatchId;
 use DateTimeImmutable;
-use Histel951\Dota2Api\Client\Dota2ApiClient;
-use Histel951\Dota2Api\Domain\Common\Exceptions\InvalidMatchIdException;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -22,7 +22,7 @@ use Throwable;
 final readonly class FetchMatchFromApiHandler
 {
     public function __construct(
-        private Dota2ApiClient $client,
+        private MatchSource $matchSource,
         private MatchProcessingRepository $processingRepository,
         private MessageBusInterface $messageBus,
         private LoggerInterface $logger,
@@ -55,19 +55,12 @@ final readonly class FetchMatchFromApiHandler
             $processing = $processing->markAsFetched();
             $this->processingRepository->update($processing);
 
-            $matchResponse = $this->client->matches()->getMatch($matchId);
-            $matchDetail = $matchResponse->getMatchDetail();
-            
-            if ($matchDetail === null) {
-                throw new \RuntimeException(
-                    'Match detail is null. Match may not exist or API returned incomplete data.'
-                );
-            }
+            $match = $this->matchSource->fetch($matchId);
 
             $this->messageBus->dispatch(
-                MatchFetchedMessage::fromMatchDetail(
+                MatchFetchedMessage::fromMatch(
                     $message->getMatchId(),
-                    $matchDetail
+                    $match
                 )
             );
 

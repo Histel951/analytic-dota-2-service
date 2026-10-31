@@ -5,45 +5,13 @@ namespace App\Infrastructure\ClickHouse\Repository;
 
 use App\Domain\Match\Entity\PlayerMatchStats;
 use App\Domain\Match\Repository\AnalyticMatchRepository;
+use App\Shared\Domain\MatchId;
+use App\Shared\Domain\PlayerId;
+use App\Shared\Domain\PlayerRole;
+use App\Shared\Domain\Side;
+use App\Shared\Domain\TeamId;
 use ClickHouseDB\Client;
 use DateTimeImmutable;
-use Histel951\Dota2Api\Domain\Common\Enums\PlayerRole;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\Duration;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\GoldSpent;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\GPM;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\HeroId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\NetWorth;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\PlayerId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\Role;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TotalGold;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TotalXP;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\XPM;
-use Histel951\Dota2Api\Domain\Entities\Match\Enums\Side;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\AncientCreeps;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\BuybackCount;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\CampsStacked;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\CourierKills;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\Denies;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\HeroDamage;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\HeroHealing;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\LaneCreeps;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\LastHits;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\NeutralCreeps;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserversDestroyed;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\ObserversPlaced;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\Watchers;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\RoshanKills;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\RunePickups;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SentryDestroyed;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SentryPlaced;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\SmokeUses;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\Stuns;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TeamfightParticipation;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TormentorKills;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TowerDamage;
-use Histel951\Dota2Api\Domain\Entities\Match\ValueObjects\TowerKills;
 
 final readonly class AnalyticMatchAnalyticsRepository implements AnalyticMatchRepository
 {
@@ -126,57 +94,57 @@ final readonly class AnalyticMatchAnalyticsRepository implements AnalyticMatchRe
     {
         return [
             'match_id' => $match->getMatchId()->getValue(),
-            'duration' => $match->getDuration()->getSeconds(),
+            'duration' => $match->getDurationSeconds(),
             'player_id' => $match->getPlayerId()->getValue(),
 
-            'opendota_hero_id' => $match->getOpenDotaHeroId()->getValue(),
+            'opendota_hero_id' => $match->getOpenDotaHeroId(),
             'opendota_team_id' => $match->getOpenDotaTeamId()->getValue(),
 
             'kills' => $match->getKills(),
             'deaths' => $match->getDeaths(),
             'assists' => $match->getAssists(),
 
-            'gpm' => $match->getGpm()->getValue(),
-            'xpm' => $match->getXpm()->getValue(),
-            'net_worth' => $match->getNetWorth()->getValue(),
-            'total_gold' => $match->getTotalGold()->getValue(),
-            'total_xp' => $match->getTotalXp()->getValue(),
-            'gold_spend' => $match->getGoldSpend()->getValue(),
+            'gpm' => $match->getGpm(),
+            'xpm' => $match->getXpm(),
+            'net_worth' => $match->getNetWorth(),
+            'total_gold' => $match->getTotalGold(),
+            'total_xp' => $match->getTotalXp(),
+            'gold_spend' => $match->getGoldSpend(),
 
-            'creeps_last_hits' => $match->getCreepsLastHits()->getValue(),
-            'creeps_lane_last_hits' => $match->getCreepsLaneLastHits()->getValue(),
-            'creeps_denies' => $match->getCreepsDenies()->getValue(),
-            'creeps_neutrals' => $match->getCreepsNeutrals()->getValue(),
-            'creeps_ancients' => $match->getCreepsAncients()->getValue(),
-            'camps_stacked' => $match->getCampsStacked()->getValue(),
+            'creeps_last_hits' => $match->getCreepsLastHits(),
+            'creeps_lane_last_hits' => $match->getCreepsLaneLastHits(),
+            'creeps_denies' => $match->getCreepsDenies(),
+            'creeps_neutrals' => $match->getCreepsNeutrals(),
+            'creeps_ancients' => $match->getCreepsAncients(),
+            'camps_stacked' => $match->getCampsStacked(),
 
-            'roshan_kills' => $match->getRoshanKills()->getValue(),
-            'tower_kills' => $match->getTowerKills()->getValue(),
-            'rune_pickups' => $match->getRunePickups()->getValue(),
-            'tormentor_kills' => $match->getTormentorKills()->getValue(),
+            'roshan_kills' => $match->getRoshanKills(),
+            'tower_kills' => $match->getTowerKills(),
+            'rune_pickups' => $match->getRunePickups(),
+            'tormentor_kills' => $match->getTormentorKills(),
 
-            'observers_placed' => $match->getObserversPlaced()->getValue(),
-            'observers_destroyed' => $match->getObserversDestroyed()->getValue(),
-            'sentry_placed' => $match->getSentryPlaced()->getValue(),
-            'sentry_destroyed' => $match->getSentryDestroyed()->getValue(),
-            'observer_takeovers' => $match->getObserverTakeovers()->getValue(),
+            'observers_placed' => $match->getObserversPlaced(),
+            'observers_destroyed' => $match->getObserversDestroyed(),
+            'sentry_placed' => $match->getSentryPlaced(),
+            'sentry_destroyed' => $match->getSentryDestroyed(),
+            'observer_takeovers' => $match->getObserverTakeovers(),
 
-            'hero_damage' => $match->getHeroDamage()->getValue(),
-            'tower_damage' => $match->getTowerDamage()->getValue(),
-            'hero_healing' => $match->getHeroHealing()->getValue(),
+            'hero_damage' => $match->getHeroDamage(),
+            'tower_damage' => $match->getTowerDamage(),
+            'hero_healing' => $match->getHeroHealing(),
 
-            'buyback_count' => $match->getBuybackCount()->getValue(),
+            'buyback_count' => $match->getBuybackCount(),
             'first_blood_claimed' => (int)$match->isFirstBloodClaimed(),
-            'courier_kills' => $match->getCourierKills()->getValue(),
-            'stuns' => $match->getStuns()->getValue(),
-            'teamfight_participation' => $match->getTeamfightParticipation()->getValue(),
-            'smoke_uses' => $match->getSmokeUses()->getValue(),
+            'courier_kills' => $match->getCourierKills(),
+            'stuns' => $match->getStuns(),
+            'teamfight_participation' => $match->getTeamfightParticipation(),
+            'smoke_uses' => $match->getSmokeUses(),
 
             'side' => $match->getSide()->value,
             'win' => (int)$match->isWin(),
 
-            'lane' => $match->getRole()->toInt(),
-            'role' => $match->getRole()->toInt(),
+            'lane' => $match->getRole()->value,
+            'role' => $match->getRole()->value,
 
             'start_time' => $match->getStartTime()->format('Y-m-d H:i:s'),
         ];
@@ -212,46 +180,46 @@ final readonly class AnalyticMatchAnalyticsRepository implements AnalyticMatchRe
     {
         return new PlayerMatchStats(
             matchId: new MatchId($row['match_id']),
-            duration: Duration::fromSeconds($row['duration']),
+            durationSeconds: (int) $row['duration'],
             playerId: new PlayerId($row['player_id']),
-            openDotaHeroId: new HeroId($row['opendota_hero_id']),
+            openDotaHeroId: (int) ($row['opendota_hero_id']),
             openDotaTeamId: new TeamId($row['opendota_team_id']),
             kills: (int)$row['kills'],
             deaths: (int)$row['deaths'],
             assists: (int)$row['assists'],
-            gpm: new GPM($row['gpm']),
-            xpm: new XPM($row['xpm']),
-            netWorth: new NetWorth($row['net_worth']),
-            totalGold: new TotalGold($row['total_gold']),
-            totalXp: new TotalXP($row['total_xp']),
-            goldSpend: new GoldSpent($row['gold_spend']),
-            creepsLastHits: new LastHits($row['creeps_last_hits']),
-            creepsLaneLastHits: new LaneCreeps($row['creeps_lane_last_hits']),
-            creepsDenies: new Denies($row['creeps_denies']),
-            creepsNeutrals: new NeutralCreeps($row['creeps_neutrals']),
-            creepsAncients: new AncientCreeps($row['creeps_ancients']),
-            campsStacked: new CampsStacked($row['camps_stacked']),
-            roshanKills: new RoshanKills($row['roshan_kills']),
-            towerKills: new TowerKills($row['tower_kills']),
-            runePickups: new RunePickups($row['rune_pickups']),
-            tormentorKills: new TormentorKills($row['tormentor_kills'] ?? 0),
-            observersPlaced: new ObserversPlaced($row['observers_placed']),
-            observersDestroyed: new ObserversDestroyed($row['observers_destroyed']),
-            sentryPlaced: new SentryPlaced($row['sentry_placed']),
-            sentryDestroyed: new SentryDestroyed($row['sentry_destroyed']),
-            observerTakeovers: new Watchers($row['observer_takeovers'] ?? 0),
-            heroDamage: new HeroDamage($row['hero_damage']),
-            towerDamage: new TowerDamage($row['tower_damage']),
-            heroHealing: new HeroHealing($row['hero_healing']),
-            buybackCount: new BuybackCount($row['buyback_count']),
+            gpm: (int) ($row['gpm']),
+            xpm: (int) ($row['xpm']),
+            netWorth: (int) ($row['net_worth']),
+            totalGold: (int) ($row['total_gold']),
+            totalXp: (int) ($row['total_xp']),
+            goldSpend: (int) ($row['gold_spend']),
+            creepsLastHits: (int) ($row['creeps_last_hits']),
+            creepsLaneLastHits: (int) ($row['creeps_lane_last_hits']),
+            creepsDenies: (int) ($row['creeps_denies']),
+            creepsNeutrals: (int) ($row['creeps_neutrals']),
+            creepsAncients: (int) ($row['creeps_ancients']),
+            campsStacked: (int) ($row['camps_stacked']),
+            roshanKills: (int) ($row['roshan_kills']),
+            towerKills: (int) ($row['tower_kills']),
+            runePickups: (int) ($row['rune_pickups']),
+            tormentorKills: (int) ($row['tormentor_kills'] ?? 0),
+            observersPlaced: (int) ($row['observers_placed']),
+            observersDestroyed: (int) ($row['observers_destroyed']),
+            sentryPlaced: (int) ($row['sentry_placed']),
+            sentryDestroyed: (int) ($row['sentry_destroyed']),
+            observerTakeovers: (int) ($row['observer_takeovers'] ?? 0),
+            heroDamage: (int) ($row['hero_damage']),
+            towerDamage: (int) ($row['tower_damage']),
+            heroHealing: (int) ($row['hero_healing']),
+            buybackCount: (int) ($row['buyback_count']),
             firstBloodClaimed: (bool)$row['first_blood_claimed'],
-            courierKills: new CourierKills($row['courier_kills']),
-            stuns: new Stuns($row['stuns']),
-            teamfightParticipation: new TeamfightParticipation($row['teamfight_participation']),
-            smokeUses: new SmokeUses($row['smoke_uses'] ?? 0),
+            courierKills: (int) ($row['courier_kills']),
+            stuns: (float) $row['stuns'],
+            teamfightParticipation: (float) $row['teamfight_participation'],
+            smokeUses: (int) ($row['smoke_uses'] ?? 0),
             side: Side::from((int)$row['side']),
             win: (bool)$row['win'],
-            role: new Role(PlayerRole::from($row['role'])),
+            role: PlayerRole::from((int) $row['role']),
             startTime: new DateTimeImmutable($row['start_time']),
         );
     }

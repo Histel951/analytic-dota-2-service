@@ -9,7 +9,7 @@ use App\Domain\Match\Repository\MatchProcessingRepository;
 use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
+use App\Shared\Domain\MatchId;
 
 final readonly class PsqlMatchProcessingRepository implements MatchProcessingRepository
 {

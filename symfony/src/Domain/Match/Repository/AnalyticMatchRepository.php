@@ -3,7 +3,7 @@
 namespace App\Domain\Match\Repository;
 
 use App\Domain\Match\Entity\PlayerMatchStats;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
+use App\Shared\Domain\MatchId;
 
 interface AnalyticMatchRepository
 {

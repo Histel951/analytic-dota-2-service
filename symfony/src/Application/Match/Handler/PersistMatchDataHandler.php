@@ -11,8 +11,8 @@ use App\Domain\Match\Entity\MatchPlayers;
 use App\Domain\Match\Repository\MatchPlayersRepository;
 use App\Domain\Match\Repository\MatchProcessingRepository;
 use App\Domain\Match\Repository\MatchRepository;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\Region;
+use App\Shared\Domain\MatchId;
+use App\Shared\Domain\Region\Region;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -35,25 +35,25 @@ final readonly class PersistMatchDataHandler
         $matchId = new MatchId($message->getMatchId());
 
         try {
-            $matchDetail = $message->getMatchDetail();
+            $match = $message->getMatch();
 
-            $regionId = $matchDetail->getRegion()?->getId();
+            $regionId = $match->getRegion()?->getId();
 
             $newMatch = new MatchEntity(
                 matchId: $matchId,
-                startTime: $matchDetail->getStartTime()->getValue(),
-                duration: $matchDetail->getDuration()->getSeconds(),
-                radiantWin: $matchDetail->getRadiant()->isWon(),
+                startTime: $match->getStartTime(),
+                duration: $match->getDurationSeconds(),
+                radiantWin: $match->isRadiantWin(),
                 region: $regionId ? Region::fromId($regionId) : null,
             );
             $this->matchRepository->save($newMatch);
 
             $players = [];
-            foreach ($matchDetail->getPlayers()->getValue() as $player) {
+            foreach ($match->getPlayers() as $player) {
                 $matchPlayer = new MatchPlayers(
                     matchId: $matchId,
-                    playerId: $player->getIdentity()->getPlayerId(),
-                    playerProName: $player->getIdentity()->getPlayerProName()->getValue(),
+                    playerId: $player->getPlayerId(),
+                    playerProName: $player->getProName(),
                 );
                 $players[] = $matchPlayer;
             }
@@ -62,7 +62,7 @@ final readonly class PersistMatchDataHandler
             $this->messageBus->dispatch(
                 new MatchFantasyCalculateMessage(
                     matchId: $message->getMatchId(),
-                    serializedMatchDetail: $message->getSerializedMatchDetail()
+                    serializedMatch: $message->getSerializedMatch()
                 )
             );
 

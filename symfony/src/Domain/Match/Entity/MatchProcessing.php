@@ -5,7 +5,7 @@ namespace App\Domain\Match\Entity;
 
 use App\Domain\Match\Enum\MatchProcessingStatus;
 use DateTimeImmutable;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
+use App\Shared\Domain\MatchId;
 
 final class MatchProcessing
 {

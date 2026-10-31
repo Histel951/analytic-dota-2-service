@@ -9,7 +9,7 @@ use App\Domain\Match\Repository\AnalyticMatchRepository;
 use App\Domain\Match\Repository\FantasyStatsRepository;
 use App\Domain\Match\Repository\MatchProcessingRepository;
 use App\Domain\Match\Service\FantasyScoreCalculator;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\MatchId;
+use App\Shared\Domain\MatchId;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;

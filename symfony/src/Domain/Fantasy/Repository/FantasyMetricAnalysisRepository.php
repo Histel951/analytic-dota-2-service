@@ -5,8 +5,8 @@ namespace App\Domain\Fantasy\Repository;
 
 use App\Domain\Fantasy\Entity\RoleGroupMetricRecommendation;
 use DateTimeImmutable;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\PlayerId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
+use App\Shared\Domain\PlayerId;
+use App\Shared\Domain\TeamId;
 
 interface FantasyMetricAnalysisRepository
 {

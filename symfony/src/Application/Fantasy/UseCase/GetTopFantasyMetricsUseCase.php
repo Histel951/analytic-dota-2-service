@@ -7,10 +7,10 @@ use App\Application\Fantasy\Dto\GetTopFantasyMetricsQuery;
 use App\Application\Fantasy\Dto\GetTopMetricsServiceRequest;
 use App\Application\Fantasy\Service\GetTopFantasyMetricsService;
 use DateTimeImmutable;
-use Histel951\Dota2Api\Domain\Common\Exceptions\InvalidPlayerIdException;
-use Histel951\Dota2Api\Domain\Common\Exceptions\InvalidTeamIdException;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\PlayerId;
-use Histel951\Dota2Api\Domain\Common\ValueObjects\TeamId;
+use App\Shared\Domain\Exception\InvalidPlayerIdException;
+use App\Shared\Domain\Exception\InvalidTeamIdException;
+use App\Shared\Domain\PlayerId;
+use App\Shared\Domain\TeamId;
 
 final readonly class GetTopFantasyMetricsUseCase
 {

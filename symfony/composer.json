@@ -4,7 +4,7 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
-        "php": ">=8.2",
+        "php": ">=8.3",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "alvarorosado/event-driven-kafka-messenger-transport": "^0.2.0",
@@ -82,7 +82,8 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/Histel951/dota-2-api"
+            "url": "https://github.com/Histel951/dota-2-api",
+            "no-api": true
         }
     ]
 }
