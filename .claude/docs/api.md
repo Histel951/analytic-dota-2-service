@@ -1,6 +1,6 @@
 # HTTP API и консольные команды
 
-База: `http://localhost:8080` (nginx). Роуты — атрибуты в `src/UI/Http/Controller/` (`config/routes.yaml` → `type: attribute`). Аутентификации нет.
+База: `http://localhost:8080` (nginx). Роуты — атрибуты в `src/<Context>/UI/Http/Controller/` (`config/routes.yaml` — ресурс на каждый контекст, `type: attribute`). Аутентификации нет.
 
 ## HTTP
 
@@ -54,11 +54,11 @@
 
 `player_ids` в ответе — не входной фильтр, а список прошедших фильтры игроков (`getEligiblePlayerIds`). Группа ролей без подходящих игроков в `role_groups` не попадает. Алгоритм описан в fantasy.md.
 
-### Ошибки (`Infrastructure/Http/EventSubscriber/ExceptionSubscriber`)
+### Ошибки (`Shared/UI/Http/EventSubscriber/ExceptionSubscriber`)
 
 - `ValidationFailedException` → `400 {"error": "msg1, msg2"}`
 - `UnsupportedMetricException`, `InvalidPaginationException` → `400 {"error": "…"}`
-- всё остальное логируется и **пробрасывается дальше** (стандартная страница ошибки Symfony, в `dev` — с трассой). Например, `InvalidArgumentException` из VO бандла или `DateMalformedStringException` дают 500.
+- всё остальное логируется и **пробрасывается дальше** (стандартная страница ошибки Symfony, в `dev` — с трассой). Например, `Invalid*Exception` из VO `Shared\Domain` или `DateMalformedStringException` дают 500.
 
 Подписчик глобальный и срабатывает на любой запрос, не только на `/api`.
 

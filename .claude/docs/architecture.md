@@ -1,85 +1,114 @@
 # Архитектура
 
-## Слои и модули (`symfony/src/`)
+Состояние после шага 2 рефакторинга (refactoring-plan.md): код разложен по bounded contexts, логика — как в MVP. Целевое устройство контекстов (порты чтения, конвейер на событиях, анализ в домене) — refactoring-plan.md, шаги 3–5.
 
-Код разложен по слоям, внутри слоя — по модулям (`Match`, `Fantasy`, `PlayerStats`, `Team`). Внутри модуля классы разложены по типу (`Dto/`, `UseCase/`, `Service/`, `Repository/` …).
+## Контексты и слои (`symfony/src/`)
+
+Раскладка «контекст → слой». Внутри слоя классы разложены по типу или по поддомену.
 
 ```
 Kernel.php
-Domain/                        — сущности, VO, enum, интерфейсы репозиториев, доменные сервисы
-  Match/
-    Entity/                    — MatchEntity (matches), MatchPlayers (match_players), MatchProcessing (match_processing,
-                                 переходы статуса markAs*), PlayerMatchStats (строка player_match_stats, ~40 полей на VO бандла)
-    Enum/                      — MatchProcessingStatus
-    Repository/                — MatchRepository, MatchPlayersRepository, MatchProcessingRepository,
-                                 AnalyticMatchRepository (CH player_match_stats), FantasyStatsRepository (CH fantasy)
-    Service/                   — FantasyScoreCalculator
-    ValueObject/               — FantasyScoringConfig (коэффициенты из parameters)
-    Dto/                       — FantasyScoreResult (очки по 16 метрикам + total)
-  Fantasy/
-    Enum/                      — RoleGroup (core_side [1,3], mid [2], support [4,5], квоты эмблем), EmblemType (core/utility/support → метрики)
-    Service/                   — SelectTopMetricsByEmblemRules
-    Entity/                    — RoleGroupMetricRecommendation, TopComboRecommendation, PlayerInCombo
-    ValueObject/               — MetricContribution, PlayerMetrics, PlayerAnalyzedMatch, PlayerMatchStatistic
-    Repository/                — FantasyMetricAnalysisRepository
-  PlayerStats/                 — Entity/PlayerMetric, Repository/PlayerStatsReadRepository
-  Team/                        — Entity/TeamMatch, TeamFormAnalysis; Enum/TeamForm; ValueObjects/Winrate;
-                                 Repository/TeamMatchRepository, TeamFormAnalysisRepository
-Application/                   — сценарии
-  Match/
-    UseCase/                   — ParseMatchUseCase (dispatch ParseMatchMessage), RetryFailedMatchesUseCase
+Shared/
+  Domain/                      — свои VO: MatchId, PlayerId, TeamId, PlayerRole (0..5), Side, Region/{Region, RegionType},
+                                 Exception/* (Invalid*Exception, DomainException)
+  Infrastructure/ClickHouse/   — ClickHouseFactory (из $_ENV CLICKHOUSE_*) → сервис ClickHouseDB\Client
+  UI/Http/                     — EventSubscriber/ExceptionSubscriber, Response/ErrorResponse, SuccessResponse (не используется)
+Ingestion/                     — загрузка матчей и матчей команд из внешних источников
+  Domain/
+    Match/                     — ImportedMatch, ImportedPlayer (модель импорта), MatchEntity (matches), MatchPlayers (match_players),
+                                 PlayerMatchStats (строка player_match_stats, скаляры + Shared VO)
+    Processing/                — MatchProcessing (match_processing, переходы markAs*), MatchProcessingStatus
+    Team/                      — TeamMatch (team_matches), TeamMatchRef (матч из истории команды)
+    Port/                      — MatchSource, TeamMatchesSource (+ *SourceException); MatchRepository, MatchPlayersRepository,
+                                 MatchProcessingRepository, AnalyticMatchRepository (CH player_match_stats), TeamMatchRepository
+  Application/
     Handler/                   — #[AsMessageHandler]: FetchMatchFromApiHandler, ProcessMatchAnalyticsHandler,
-                                 PersistMatchDataHandler, ProcessFantasyScoreHandler, MatchFailedHandler
+                                 PersistMatchDataHandler, MatchFailedHandler
     Message/                   — ParseMatchMessage, MatchFetchedMessage, MatchAnalyticsProcessedMessage,
                                  MatchFantasyCalculateMessage, MatchFailedMessage, MatchFailedKafkaMessage
-    Extractor/                 — PlayerMatchExtractor (MatchDetail бандла → PlayerMatchStats[] обеих сторон)
-    Dto/                       — ParseMatchRequest
-  Fantasy/                     — UseCase/GetTopFantasyMetricsUseCase, Service/GetTopFantasyMetricsService (домен → DTO), Dto/*
-  PlayerStats/                 — UseCase, Service (whitelist метрик, пагинация), Dto, Exception
-  Team/                        — UseCase/FetchTeamMatchesUseCase, AnalyzeTeamsFormUseCase; Service/FetchTeamMatchesService,
-                                 TeamFormAnalyzer; Dto; Exception
-Infrastructure/
-  Postgres/Repository/         — Psql*Repository (DBAL Connection, сырой SQL)
-  ClickHouse/                  — ClickHouseFactory (из $_ENV CLICKHOUSE_*), Repository/ClickHouse*Repository,
-                                 AnalyticMatchAnalyticsRepository
-  Kafka/                       — Serializer/MatchFailedKafkaSerializer (только encode → JSON),
-                                 Config/KafkaTopicsConfig, Producer/MatchProducer (не используются)
-  Http/                        — EventSubscriber/ExceptionSubscriber, Response/* (JsonResponse-обёртки)
-UI/
-  Http/Controller/             — MatchController, PlayerStatsController, FantasyController (атрибутные роуты)
-  Console/{Match,Team,Fantasy}/ — консольные команды
+    UseCase/                   — ParseMatchUseCase, RetryFailedMatchesUseCase, FetchTeamMatchesUseCase
+    Service/                   — FetchTeamMatchesService
+    Dto/, Exception/           — ParseMatchRequest, FetchTeamMatchesRequest; InvalidDateRange/InvalidLimit/InvalidTeamIdException
+                                 (два последних не используются)
+  Infrastructure/
+    Source/OpenDota/           — OpenDotaMatchSource, OpenDotaTeamMatchesSource, OpenDotaMatchMapper (MatchDetail 2.0 → ImportedMatch).
+                                 Единственное место, где используется бандл dota-api
+    Persistence/Postgres/      — PsqlMatchRepository, PsqlMatchPlayerRepository, PsqlMatchProcessingRepository, PsqlTeamMatchRepository
+    Persistence/ClickHouse/    — AnalyticMatchAnalyticsRepository (запись и чтение player_match_stats)
+    Kafka/                     — MatchFailedKafkaSerializer (только encode → JSON); KafkaTopicsConfig, MatchProducer (не используются)
+  UI/
+    Http/                      — Controller/MatchController (POST /api/matches/parse), Response/MatchAcceptedResponse
+    Console/                   — parse:kafka:match, match:retry-failed, team:fetch-matches, team:fetch-multiple-matches
+Fantasy/                       — fantasy-очки и их анализ
+  Domain/
+    Scoring/                   — FantasyScoreCalculator, FantasyScoringConfig (коэффициенты из parameters), FantasyScoreResult
+    Analysis/                  — RoleGroup (core_side [1,3], mid [2], support [4,5], квоты эмблем), EmblemType,
+                                 SelectTopMetricsByEmblemRules, RoleGroupMetricRecommendation, TopComboRecommendation, PlayerInCombo,
+                                 MetricContribution, PlayerMetrics, PlayerAnalyzedMatch, PlayerMatchStatistic
+    Port/                      — FantasyStatsRepository (CH player_match_fantasy_stats), FantasyMetricAnalysisRepository
+  Application/
+    Handler/                   — ProcessFantasyScoreHandler (последний шаг конвейера импорта)
+    UseCase/, Service/, Dto/   — GetTopFantasyMetricsUseCase, GetTopFantasyMetricsService (домен → DTO), Dto/*
+  Infrastructure/Persistence/ClickHouse/ — ClickHouseFantasyStatsRepository, ClickHouseFantasyMetricAnalysisRepository
+  UI/
+    Http/                      — Controller/FantasyController (GET /api/fantasy/top-metrics), Response/TopFantasyMetricsResponse
+    Console/                   — fantasy:top-metrics, fantasy:export-top-metrics
+Statistics/                    — статистика игроков и форма команд
+  Domain/
+    PlayerStats/               — PlayerMetric
+    TeamForm/                  — TeamFormAnalysis, TeamForm, Winrate
+    Port/                      — PlayerStatsReadRepository, TeamFormAnalysisRepository
+  Application/
+    UseCase/, Service/         — GetTopPlayersByMetricUseCase/Service (whitelist метрик, пагинация),
+                                 AnalyzeTeamsFormUseCase, TeamFormAnalyzer
+    Dto/, Exception/           — GetTopPlayersQuery, TopPlayerByMetric, AnalyzeTeamsFormRequest, TeamFormResult;
+                                 UnsupportedMetricException, InvalidPaginationException, InsufficientMatchesException
+  Infrastructure/Persistence/ClickHouse/ — ClickHousePlayerStatsReadRepository, ClickHouseTeamFormAnalysisRepository
+  UI/
+    Http/                      — Controller/PlayerStatsController (GET /api/players/top), Response/TopPlayersResponse
+    Console/                   — team:analyze-form
 ```
 
-Цепочка вызова одинакова во всех модулях: **UI** (парсинг входа → DTO запроса с `#[Assert]` → `ValidatorInterface`) → **UseCase** (примитивы → VO бандла) → **Service** (бизнес-валидация, оркестрация) → **Repository**-интерфейс домена → реализация в Infrastructure. В Match вместо Service стоит цепочка Messenger-хэндлеров.
+Цепочка вызова одинакова во всех контекстах: **UI** (парсинг входа → DTO запроса с `#[Assert]` → `ValidatorInterface`) → **UseCase** (примитивы → VO `Shared\Domain`) → **Service** (бизнес-валидация, оркестрация) → **порт** домена → реализация в Infrastructure. В Ingestion вместо Service стоит цепочка Messenger-хэндлеров.
 
 ## Правила зависимостей
 
-Базовые правила действуют для нового и переписываемого кода, пока не утверждена целевая архитектура (она их уточнит). Автоматической проверки нет: тестов нет, deptrac не подключён. Проверка — grep по `use` (ddd-reviewer).
+Целевые правила — refactoring-plan.md → «Правила зависимостей». Автоматической проверки нет: тестов нет, deptrac не подключён. Проверка — grep по `use` (ddd-reviewer).
 
-- `Domain` → только `Domain` (свой модуль; другие модули — только через явно разрешённое общее ядро) и PHP. Не зависит от `Application`, `Infrastructure`, `UI`, Symfony, Doctrine, ClickHouse и формата OpenDota.
-- `Application` → `Domain`, `Psr\Log`, `Symfony\Component\Messenger` (шина и атрибут хэндлера), `Symfony\Component\Validator\Constraints` (атрибуты DTO запроса). Не зависит от `Infrastructure` и `UI`.
-- `Infrastructure` → `Domain`, `Application` (реализует интерфейсы домена, сериализует сообщения), внешние библиотеки.
-- `UI` → `Application` (use case'ы, DTO запроса/результата), `Infrastructure\Http\Response`. В `Domain` и репозитории напрямую не ходит.
-- Доменная логика (расчёты, правила отбора, квоты) живёт в `Domain`, а не в SQL-репозитории и не в контроллере. Репозиторий отдаёт данные, а не решения.
-- Внешний источник (`histel951/dota-2-api`) — деталь инфраструктуры: его классы не должны протекать в новые сущности, сообщения и сигнатуры домена.
+- `Shared\Domain` ни от чего не зависит. `Shared\UI\Http` → Symfony HttpKernel/HttpFoundation и `Shared\Domain`.
+- `<Context>\Domain` → свой `Domain`, `Shared\Domain` и PHP. Без Symfony, Doctrine, ClickHouse, бандла dota-api. **Соблюдается.**
+- `<Context>\Application` → свой `Domain`, `Shared`, `Psr\Log`, `Symfony\Component\Messenger`, `Symfony\Component\Validator\Constraints`. Не зависит от `Infrastructure` и `UI`. **Соблюдается.**
+- `<Context>\Infrastructure` → свой `Domain`/`Application`, `Shared`, внешние библиотеки. Бандл dota-api — только в `Ingestion\Infrastructure\Source\*`. **Соблюдается.**
+- `<Context>\UI` → свой `Application`, `Shared\UI\Http`. **Соблюдается.**
+- Контексты не импортируют классы друг друга — связь только через `Shared` и через таблицы-read-модели владельца.
+- Доменная логика (расчёты, правила отбора, квоты) живёт в `Domain`, а не в SQL-репозитории и не в контроллере.
 
-**Отступления текущего кода (MVP)** — не образец, не тиражировать, закрываются рефакторингом:
+**Отступления, которые остались после шага 2** — не образец, не тиражировать, закрываются шагами 3–5:
 
-- `Domain` повсеместно зависит от VO бандла dota-api (`MatchId`, `PlayerId`, `TeamId`, `Region`, VO статистики, `Side`, `Role`), `PlayerMatchStats` построен на них
-- `Application\Match\Message\*` несут `serialize(MatchDetail)` бандла, хэндлеры и `FetchTeamMatchesService` вызывают `Dota2ApiClient` напрямую, без порта
-- `ClickHouseFantasyMetricAnalysisRepository` (Infrastructure) содержит логику анализа: вклад метрик, квоты эмблем через доменный `SelectTopMetricsByEmblemRules`, сборку связок, никнеймы через `MatchPlayersRepository`
-- модули связаны напрямую: Fantasy ← `Domain\Match\Repository\MatchPlayersRepository`, Team ← `Domain\Match\Repository\MatchRepository`, Team ← `Application\Match\Message\ParseMatchMessage`
-- `Application\Fantasy\Service` — маппер домен → DTO, а не сервис; UseCase'ы PlayerStats/Team — проксирующие обёртки
+| Откуда | Что импортирует | Закрывается |
+|---|---|---|
+| `Fantasy\Application\Handler\ProcessFantasyScoreHandler` | `Ingestion\Application\Message\MatchFantasyCalculateMessage`, `MatchFailedMessage`; `Ingestion\Domain\Port\AnalyticMatchRepository`, `MatchProcessingRepository` | шаг 3 (событие `MatchImported`, свой порт чтения `MatchPerformanceReader`, статус — через `Shared\Event`) |
+| `Fantasy\Domain\Scoring\FantasyScoreCalculator` | `Ingestion\Domain\Match\PlayerMatchStats` | шаг 3 (вход расчёта — модель Fantasy) |
+| `Fantasy\Infrastructure\…\ClickHouseFantasyMetricAnalysisRepository` | `Ingestion\Domain\Port\MatchPlayersRepository` (ники игроков) | шаг 4 (`PlayerNameReader`) |
+| `Statistics\Application\Service\TeamFormAnalyzer` | `Ingestion\Domain\Port\TeamMatchRepository`, `MatchRepository` | шаг 5 (`TeamMatchHistoryReader`) |
+| `Shared\UI\Http\EventSubscriber\ExceptionSubscriber` | `Statistics\Application\Exception\UnsupportedMetricException`, `InvalidPaginationException` | шаг 5 (маркер-интерфейс в `Shared\Domain`) |
+
+Прочие отступления MVP:
+
+- `ClickHouseFantasyMetricAnalysisRepository` содержит логику анализа: вклад метрик, квоты эмблем через доменный `SelectTopMetricsByEmblemRules`, сборку связок (шаг 4)
+- `Fantasy\Application\Service\GetTopFantasyMetricsService` — маппер домен → DTO, а не сервис; UseCase'ы Statistics и `FetchTeamMatchesUseCase` — проксирующие обёртки
+- сообщения `async` несут `serialize(ImportedMatch)` (шаг 3 — только `match_id`)
 
 ## DI (`symfony/config/services.yaml`)
 
-- `App\` — автовайринг и автоконфигурация всего `src/` (кроме `Kernel.php`)
+- `App\` — автовайринг и автоконфигурация всего `src/` (кроме `Kernel.php`). Явные определения сгруппированы по контекстам (`Shared`, `Ingestion`, `Fantasy`, `Statistics`)
+- Порты-источники: `MatchSource` → `OpenDotaMatchSource`, `TeamMatchesSource` → `OpenDotaTeamMatchesSource` (выбор источника по сценарию). `Dota2ApiClient` регистрирует бандл, конфиг — `config/packages/dota2_api.yaml` (формат 2.0: `opendota.*`, `stratz.*`, `timeout: 30`, `max_retries: 3`)
 - Интерфейсы ClickHouse-репозиториев алиасятся явно на реализации. Postgres-репозитории (`MatchRepository`, `MatchPlayersRepository`, `MatchProcessingRepository`) резолвятся автовайрингом по единственной реализации, `TeamMatchRepository` — явным алиасом
-- `ClickHouseDB\Client` — через фабрику `ClickHouseFactory::create`. `ClickHouseTeamFormAnalysisRepository` получает саму фабрику и создаёт клиент на каждый вызов
+- `ClickHouseDB\Client` — через фабрику `Shared\Infrastructure\ClickHouse\ClickHouseFactory::create`. `ClickHouseTeamFormAnalysisRepository` получает саму фабрику и создаёт клиент на каждый вызов
 - `FantasyScoringConfig` — 18 аргументов из `parameters.fantasy_scoring.*` (fantasy.md)
-- `Histel951\Dota2Api\Client\Dota2ApiClient` — `autowire: true`, `lazy: false`; конфиг бандла `config/packages/dota2_api.yaml` (OpenDota, `api_key: null`, `timeout: 30`, `source: opendota`)
-- `RegionResolverInterface` → `RegionResolver` — класса в установленной версии бандла нет; определение удаляется как неиспользуемое, `lint:container` проходит
 - `ExportTopFantasyMetricsCommand::$projectDir` = `%kernel.project_dir%`; `KafkaTopicsConfig` — имена топиков строками
+- Роуты (`config/routes.yaml`) — атрибутные, по ресурсу на контекст: `src/{Ingestion,Fantasy,Statistics}/UI/Http/Controller/`
+
 
 ## Messenger и транспорты (`config/packages/messenger.yaml`)
 
@@ -91,7 +120,7 @@ UI/
 
 Общие настройки консьюмера Kafka — `config/packages/event_drive_kafka_transport.yaml` (`commit_async`, `enable.auto.commit: false`, `consume_timeout_ms: 500`).
 
-Сообщения между хэндлерами несут `matchId` и `serializedMatchDetail` — `serialize()` объекта `MatchDetail` бандла (геттер `getMatchDetail()` делает `unserialize()`). Хэндлеры ловят `Throwable` сами и не пробрасывают исключение, поэтому ретраи `async` на практике не срабатывают. Ошибка оформляется явно: статус `failed` + `MatchFailedMessage`.
+Сообщения между хэндлерами несут `matchId` и `serializedMatch` — `serialize()` модели приложения `ImportedMatch` (геттер `getMatch()` делает `unserialize()`). Хэндлеры ловят `Throwable` сами и не пробрасывают исключение, поэтому ретраи `async` на практике не срабатывают. Ошибка оформляется явно: статус `failed` + `MatchFailedMessage`.
 
 ## Конвейер обработки матча
 
@@ -101,14 +130,14 @@ POST /api/matches/parse | parse:kafka:match | team:fetch-matches | match:retry-f
 FetchMatchFromApiHandler
   match_processing: нет строки → INSERT pending; status=completed → пропуск (любой другой статус, в т.ч. failed, обрабатывается заново)
   markAsFetched (status=fetched, fetched_at) — ДО запроса к API
-  Dota2ApiClient::matches()->getMatch(MatchId) → MatchDetail (null → RuntimeException)
-  → MatchFetchedMessage(serialize(MatchDetail))        → async
+  MatchSource::fetch(MatchId) → ImportedMatch           (OpenDota: openDota()->matches()->getMatch; ошибка/пустой ответ → MatchSourceException)
+  → MatchFetchedMessage(serialize(ImportedMatch))      → async
 ProcessMatchAnalyticsHandler
-  PlayerMatchExtractor::extract → 10 × PlayerMatchStats → INSERT в CH player_match_stats
+  ImportedMatch::getPlayerStats() → 10 × PlayerMatchStats → INSERT в CH player_match_stats
   markAnalyticsProcessed (analytics_completed)
   → MatchAnalyticsProcessedMessage                     → async
 PersistMatchDataHandler
-  UPSERT matches (start_time, duration, radiant_win, region = id региона бандла)
+  UPSERT matches (start_time, duration, radiant_win, region = id региона)
   INSERT match_players … ON CONFLICT DO NOTHING (player_pro_name)
   → MatchFantasyCalculateMessage                       → async
 ProcessFantasyScoreHandler
@@ -129,9 +158,9 @@ MatchFailedHandler → MatchFailedKafkaMessage{match_id, error_type, error_messa
 
 ```
 team:fetch-matches <id> [--limit] [--date-from] [--date-to]
-  → FetchTeamMatchesService: Dota2ApiClient::teams()->getMatchesByTeam(TeamId) (OpenDota /teams/{id}/matches)
+  → FetchTeamMatchesService: TeamMatchesSource::listByTeam(TeamId) → TeamMatchRef[] (OpenDota /teams/{id}/matches)
     фильтр по дате → до limit матчей: dispatch ParseMatchMessage + TeamMatch(team, match, isWin)
-    TypeError маппера бандла → матч пропускается с warning
+    ошибка источника → TeamMatchesSourceException на всю команду (known-issues.md §14)
   → PsqlTeamMatchRepository::saveBulk (UPSERT team_matches в транзакции)
 
 team:analyze-form "<ids>" [--date-from] [--date-to]     (OpenDota не вызывается)

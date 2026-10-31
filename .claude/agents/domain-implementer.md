@@ -33,12 +33,12 @@ model: sonnet
 
 ## Твоя зона
 
-- `symfony/src/Domain/<Module>/*` — `Entity`, `ValueObject`, `Enum`, `Service` (доменные
+- `symfony/src/<Context>/Domain/*` и `symfony/src/Shared/Domain/*` — `Entity`, `ValueObject`, `Enum`, `Service` (доменные
   правила: `FantasyScoreCalculator`, `SelectTopMetricsByEmblemRules`, `TeamForm::fromWinrate`),
-  `Repository` и прочие интерфейсы портов, доменные исключения, `Dto` домена.
-- `symfony/src/Application/<Module>/*` — `UseCase`, `Service`, `Dto` (запрос с `#[Assert]`,
+  `Port/` (интерфейсы репозиториев и источников), доменные исключения, `Dto` домена.
+- `symfony/src/<Context>/Application/*` — `UseCase`, `Service`, `Dto` (запрос с `#[Assert]`,
   результат с `toArray()`), `Exception`, `Message`, `Handler` (`#[AsMessageHandler]`),
-  `Extractor`.
+  (контексты — `Ingestion`, `Fantasy`, `Statistics`, architecture.md).
 
 Реализации репозиториев, SQL, миграции — зона `persistence-implementer`. Контроллеры, команды,
 `Infrastructure/Http`, `Infrastructure/Kafka`, `services.yaml`, `config/packages/*` — зона
@@ -76,8 +76,8 @@ model: sonnet
 - `php -l <file>` на каждом изменённом файле;
 - `php bin/console lint:container` — граф DI собирается и типы аргументов совпадают;
 - границы слоёв на своих файлах:
-  `grep -rnE '^use (App[\](Application|Infrastructure|UI)|Symfony|Doctrine|ClickHouseDB)' src/Domain`
-  и `grep -rnE '^use App[\](Infrastructure|UI)' src/Application` (одинарные кавычки и `[\]`
+  `grep -rnE '^use (App[\][A-Za-z]+[\](Application|Infrastructure|UI)|Symfony|Doctrine|ClickHouseDB)' src/*/Domain`
+  и `grep -rnE '^use App[\][A-Za-z]+[\](Infrastructure|UI)' src/*/Application` (одинарные кавычки и `[\]`
   обязательны: в Git Bash `\\` в `-E` не совпадает с обратным слэшем). Сейчас оба пустые — новые
   совпадения в твоих файлах недопустимы. `Histel951` в новых сигнатурах домена тоже недопустим
   (старые MVP-использования перечисли, если трогал эти файлы).

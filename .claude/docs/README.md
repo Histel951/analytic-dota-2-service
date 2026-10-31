@@ -34,13 +34,13 @@ Symfony-приложение для аналитики про-сцены Dota 2.
 
 ## Статус архитектуры
 
-Проект писался как минимальный MVP. Текущая раскладка (architecture.md) описывает, **как есть**, а не образец для подражания: новый код не должен копировать отступления, перечисленные в architecture.md → «Правила зависимостей» и в known-issues.md. **Целевая архитектура и план рефакторинга — [refactoring-plan.md](refactoring-plan.md)** (контексты Ingestion / Fantasy / Statistics, бандл dota-api 2.0 только в `Infrastructure`, поведение сохраняется). Для нового и переписываемого кода он главнее текущей раскладки.
+Проект писался как минимальный MVP. Рефакторинг идёт по шагам: после шага 2 код разложен по контекстам Ingestion / Fantasy / Statistics + Shared, но логика внутри — ещё MVP. architecture.md описывает, **как есть**, а не образец для подражания: новый код не должен копировать отступления, перечисленные в architecture.md → «Правила зависимостей» и в known-issues.md. **Целевая архитектура и план рефакторинга — [refactoring-plan.md](refactoring-plan.md)** (контексты Ingestion / Fantasy / Statistics, бандл dota-api 2.0 только в `Infrastructure`, поведение сохраняется). Для нового и переписываемого кода он главнее текущей раскладки.
 
 ## Агенты (`.claude/agents/`)
 
 - `architect` — проектирование и план рефакторинга: где живёт код, модель, порты, хранилища, сообщения (только чтение, opus)
-- `domain-implementer` — `Domain/*` и `Application/*`: сущности, VO, enum, доменные сервисы, use case'ы, хэндлеры и сообщения
-- `persistence-implementer` — `Infrastructure/{Postgres,ClickHouse}`: репозитории, SQL, миграции, корректность аналитических запросов
+- `domain-implementer` — `<Context>/Domain/*`, `<Context>/Application/*`, `Shared/Domain`: сущности, VO, enum, доменные сервисы, use case'ы, хэндлеры и сообщения
+- `persistence-implementer` — `<Context>/Infrastructure/Persistence/{Postgres,ClickHouse}`: репозитории, SQL, миграции, корректность аналитических запросов
 - `api-designer` — входы и интеграции: HTTP-контроллеры и ответы, консольные команды, `ExceptionSubscriber`, Messenger/Kafka, DI (`services.yaml`, `config/packages`), интеграция с бандлом dota-api
 - `test-writer` — PHPUnit-тесты (в проекте их пока нет, инфраструктуру тестов ставит по решению оркестратора)
 - `ddd-reviewer` — ревью границ слоёв и модулей и соглашений из `.claude/docs` (только чтение)
