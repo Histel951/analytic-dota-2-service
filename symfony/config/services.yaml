@@ -41,58 +41,47 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    # --- Shared
 
     ClickHouseDB\Client:
-        factory: [ App\Infrastructure\ClickHouse\ClickHouseFactory, create ]
+        factory: [ App\Shared\Infrastructure\ClickHouse\ClickHouseFactory, create ]
 
-    App\Infrastructure\ClickHouse\Repository\AnalyticMatchAnalyticsRepository:
+    # --- Ingestion
+
+    # Внешние источники данных: какой адаптер обслуживает сценарий (OpenDota | STRATZ).
+    # Dota2ApiClient регистрирует бандл dota-api; используется только адаптерами App\Ingestion\Infrastructure\Source.
+    App\Ingestion\Domain\Port\MatchSource:
+        alias: App\Ingestion\Infrastructure\Source\OpenDota\OpenDotaMatchSource
+
+    App\Ingestion\Domain\Port\TeamMatchesSource:
+        alias: App\Ingestion\Infrastructure\Source\OpenDota\OpenDotaTeamMatchesSource
+
+    App\Ingestion\Infrastructure\Persistence\ClickHouse\AnalyticMatchAnalyticsRepository:
         arguments:
             $clickhouse: '@ClickHouseDB\Client'
 
-    App\Domain\Match\Repository\AnalyticMatchRepository:
-        alias: App\Infrastructure\ClickHouse\Repository\AnalyticMatchAnalyticsRepository
+    App\Ingestion\Domain\Port\AnalyticMatchRepository:
+        alias: App\Ingestion\Infrastructure\Persistence\ClickHouse\AnalyticMatchAnalyticsRepository
 
-    App\Infrastructure\ClickHouse\Repository\ClickHouseFantasyStatsRepository:
-        arguments:
-            $clickhouse: '@ClickHouseDB\Client'
-
-    App\Domain\Match\Repository\FantasyStatsRepository:
-        alias: App\Infrastructure\ClickHouse\Repository\ClickHouseFantasyStatsRepository
-
-    App\Infrastructure\ClickHouse\Repository\ClickHousePlayerStatsReadRepository:
-        arguments:
-            $clickhouse: '@ClickHouseDB\Client'
-
-    App\Domain\PlayerStats\Repository\PlayerStatsReadRepository:
-        alias: App\Infrastructure\ClickHouse\Repository\ClickHousePlayerStatsReadRepository
-
-    App\Infrastructure\ClickHouse\Repository\ClickHouseTeamFormAnalysisRepository:
-        arguments:
-            $clickHouseFactory: '@App\Infrastructure\ClickHouse\ClickHouseFactory'
-
-    App\Domain\Team\Repository\TeamFormAnalysisRepository:
-        alias: App\Infrastructure\ClickHouse\Repository\ClickHouseTeamFormAnalysisRepository
-
-    App\Infrastructure\Postgres\Repository\PsqlTeamMatchRepository:
+    App\Ingestion\Infrastructure\Persistence\Postgres\PsqlTeamMatchRepository:
         arguments:
             $connection: '@doctrine.dbal.default_connection'
 
-    App\Domain\Team\Repository\TeamMatchRepository:
-        alias: App\Infrastructure\Postgres\Repository\PsqlTeamMatchRepository
+    App\Ingestion\Domain\Port\TeamMatchRepository:
+        alias: App\Ingestion\Infrastructure\Persistence\Postgres\PsqlTeamMatchRepository
 
-    App\Infrastructure\ClickHouse\Repository\ClickHouseFantasyMetricAnalysisRepository:
+    App\Ingestion\Infrastructure\Kafka\KafkaTopicsConfig:
         arguments:
-            $clickhouse: '@ClickHouseDB\Client'
+            $matchesParse: 'dota2.matches.parse.v1'
+            $matchesFailed: 'dota2.matches.failed.v1'
+            $matchesAnalytics: 'dota2.matches.analytics.v1'
+            $playersAggregate: 'dota2.players.aggregate.v1'
+            $fantasyCalculate: 'dota2.fantasy.calculate.v1'
 
-    App\Domain\Fantasy\Repository\FantasyMetricAnalysisRepository:
-        alias: App\Infrastructure\ClickHouse\Repository\ClickHouseFantasyMetricAnalysisRepository
-
-    App\UI\Console\Fantasy\ExportTopFantasyMetricsCommand:
-        arguments:
-            $projectDir: '%kernel.project_dir%'
+    # --- Fantasy
 
     # Fantasy Scoring Configuration
-    App\Domain\Match\ValueObject\FantasyScoringConfig:
+    App\Fantasy\Domain\Scoring\FantasyScoringConfig:
         arguments:
             $killsMultiplier: '%fantasy_scoring.kills_multiplier%'
             $deathsBase: '%fantasy_scoring.deaths_base%'
@@ -113,22 +102,40 @@ services:
             $smokeMultiplier: '%fantasy_scoring.smoke_multiplier%'
             $watcherMultiplier: '%fantasy_scoring.watcher_multiplier%'
 
-    App\Domain\Match\Service\FantasyScoreCalculator:
+    App\Fantasy\Domain\Scoring\FantasyScoreCalculator:
         arguments:
-            $config: '@App\Domain\Match\ValueObject\FantasyScoringConfig'
+            $config: '@App\Fantasy\Domain\Scoring\FantasyScoringConfig'
 
-    # Внешние источники данных: какой адаптер обслуживает сценарий (OpenDota | STRATZ).
-    # Dota2ApiClient регистрирует бандл dota-api; используется только адаптерами App\Infrastructure\OpenDota.
-    App\Domain\Match\Source\MatchSource:
-        alias: App\Infrastructure\OpenDota\OpenDotaMatchSource
-
-    App\Domain\Team\Source\TeamMatchesSource:
-        alias: App\Infrastructure\OpenDota\OpenDotaTeamMatchesSource
-
-    App\Infrastructure\Kafka\Config\KafkaTopicsConfig:
+    App\Fantasy\Infrastructure\Persistence\ClickHouse\ClickHouseFantasyStatsRepository:
         arguments:
-            $matchesParse: 'dota2.matches.parse.v1'
-            $matchesFailed: 'dota2.matches.failed.v1'
-            $matchesAnalytics: 'dota2.matches.analytics.v1'
-            $playersAggregate: 'dota2.players.aggregate.v1'
-            $fantasyCalculate: 'dota2.fantasy.calculate.v1'
+            $clickhouse: '@ClickHouseDB\Client'
+
+    App\Fantasy\Domain\Port\FantasyStatsRepository:
+        alias: App\Fantasy\Infrastructure\Persistence\ClickHouse\ClickHouseFantasyStatsRepository
+
+    App\Fantasy\Infrastructure\Persistence\ClickHouse\ClickHouseFantasyMetricAnalysisRepository:
+        arguments:
+            $clickhouse: '@ClickHouseDB\Client'
+
+    App\Fantasy\Domain\Port\FantasyMetricAnalysisRepository:
+        alias: App\Fantasy\Infrastructure\Persistence\ClickHouse\ClickHouseFantasyMetricAnalysisRepository
+
+    App\Fantasy\UI\Console\ExportTopFantasyMetricsCommand:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    # --- Statistics
+
+    App\Statistics\Infrastructure\Persistence\ClickHouse\ClickHousePlayerStatsReadRepository:
+        arguments:
+            $clickhouse: '@ClickHouseDB\Client'
+
+    App\Statistics\Domain\Port\PlayerStatsReadRepository:
+        alias: App\Statistics\Infrastructure\Persistence\ClickHouse\ClickHousePlayerStatsReadRepository
+
+    App\Statistics\Infrastructure\Persistence\ClickHouse\ClickHouseTeamFormAnalysisRepository:
+        arguments:
+            $clickHouseFactory: '@App\Shared\Infrastructure\ClickHouse\ClickHouseFactory'
+
+    App\Statistics\Domain\Port\TeamFormAnalysisRepository:
+        alias: App\Statistics\Infrastructure\Persistence\ClickHouse\ClickHouseTeamFormAnalysisRepository

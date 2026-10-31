@@ -31,14 +31,14 @@ DI-конфигурацию и бандл `histel951/dota-2-api` (OpenDota).
 
 ## Твоя зона
 
-- `symfony/src/UI/Http/Controller/*` — тонкие контроллеры: вход → DTO запроса → валидатор →
+- `symfony/src/<Context>/UI/Http/Controller/*` — тонкие контроллеры: вход → DTO запроса → валидатор →
   use case → `…Response`.
-- `symfony/src/UI/Console/<Module>/*` — команды (`#[AsCommand]`, опции в `kebab-case`,
+- `symfony/src/<Context>/UI/Console/*` — команды (`#[AsCommand]`, опции в `kebab-case`,
   `SymfonyStyle`, коды возврата `Command::SUCCESS/FAILURE`).
-- `symfony/src/Infrastructure/Http/*` — `Response/*`, `EventSubscriber/ExceptionSubscriber`
+- `symfony/src/<Context>/UI/Http/Response/*`; общий HTTP-слой `symfony/src/Shared/UI/Http/*` — `ErrorResponse`, `EventSubscriber/ExceptionSubscriber`
   (маппинг исключений приложения в HTTP-коды).
-- `symfony/src/Infrastructure/Kafka/*` — сериализаторы, конфиг топиков; адаптер внешнего
-  источника матчей/команд поверх `Dota2ApiClient` (порт объявляет `domain-implementer`).
+- `symfony/src/Ingestion/Infrastructure/Kafka/*` — сериализаторы, конфиг топиков; адаптер внешнего
+  источника в `symfony/src/Ingestion/Infrastructure/Source/<Source>/` поверх `Dota2ApiClient` (порт объявляет `domain-implementer`).
 - `symfony/config/services.yaml`, `symfony/config/packages/*`, `symfony/config/routes*`,
   `docker-compose.yml`, `docker/*`, `.env` (без секретов).
 

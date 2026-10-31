@@ -31,13 +31,13 @@ MVP-отступлений (architecture.md) — не находка, **пока
 
 1. **Границы слоёв.** Автоматической проверки нет, поэтому grep из `symfony/` (одинарные
    кавычки и `[\]` обязательны: в Git Bash `\\` в `-E` не совпадает с обратным слэшем):
-   - `grep -rnE '^use (App[\](Application|Infrastructure|UI)|Symfony|Doctrine|ClickHouseDB)' src/Domain` — сейчас пусто
-   - `grep -rnE '^use App[\](Infrastructure|UI)' src/Application` — сейчас пусто
-   - `grep -rnE '^use App[\]Domain[\].*[\]Repository' src/UI` — сейчас пусто
-   - `grep -rnE '^use App[\](Domain|Application)[\]<ДругойМодуль>' src/*/<Модуль>` — связи между модулями
-     (сейчас есть: Team → `Application\Match\Message\ParseMatchMessage`, `Domain\Match\Repository\MatchRepository`)
-   - `grep -rln "Histel951" src --include=*.php` — бандл dota-api вне адаптера в `Infrastructure`
-     (сейчас 38 файлов — MVP-отступление; новые файлы в этом списке вне адаптера — находка)
+   - `grep -rnE '^use (App[\][A-Za-z]+[\](Application|Infrastructure|UI)|Symfony|Doctrine|ClickHouseDB)' src/*/Domain` — сейчас пусто
+   - `grep -rnE '^use App[\][A-Za-z]+[\](Infrastructure|UI)' src/*/Application` — сейчас пусто
+   - `grep -rnE '^use App[\][A-Za-z]+[\](Domain|Infrastructure)[\]' src/*/UI` — сейчас пусто
+   - `grep -rnE '^use App[\](Ingestion|Fantasy|Statistics)[\]' src/<Context> src/Shared | grep -v 'App[\]<Context>[\]'` — связи между контекстами
+     (сейчас есть — таблица «Отступления, которые остались после шага 2» в architecture.md; новые — находка)
+   - `grep -rln "Histel951" src --include=*.php` — бандл dota-api вне `src/Ingestion/Infrastructure/Source/`
+     (сейчас только 3 файла `Source/OpenDota/`; любой файл вне `Source/` — находка)
    Каждое новое совпадение в изменённых файлах — находка. Сверх grep руками: `Domain` не знает
    формат OpenDota и SQL, контроллеры и команды не содержат бизнес-логики.
 2. **Границы модулей.** Модуль не лезет во внутренности другого (`Domain\Match\Repository` из

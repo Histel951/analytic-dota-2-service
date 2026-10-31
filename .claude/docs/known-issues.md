@@ -23,7 +23,7 @@
 
 ## Зависимость от dota-api
 
-11. **[закрыто: шаг 1] Привязка к 1.x бандла.** Бандл обновлён до 2.0 (`dev-main` → `73f9a54`), классы бандла — только в `src/Infrastructure/OpenDota/` (адаптеры `MatchSource`/`TeamMatchesSource`).
+11. **[закрыто: шаг 1] Привязка к 1.x бандла.** Бандл обновлён до 2.0 (`dev-main` → `73f9a54`), классы бандла — только в `src/Ingestion/Infrastructure/Source/OpenDota/` (до шага 2 — `src/Infrastructure/OpenDota/`) (адаптеры `MatchSource`/`TeamMatchesSource`).
 12. **[закрыто: шаг 1] `RegionResolverInterface` в `services.yaml`** — удалён.
 13. **[частично: шаг 1, до конца — шаг 3] Сериализованные объекты в сообщениях `async`.** `MatchDetail` бандла из сообщений ушёл, теперь в них `serialize(ImportedMatch)` (модель приложения). Смена этого класса при непустой `messenger_messages` по-прежнему сломает `unserialize`. На шаге 3 в сообщениях останется только `match_id`.
 14. **[изменено: шаг 1] Пропуск матчей команды при `TypeError` маппера 1.x убран.** В 2.0 история матчей команды маппится целиком при запросе: ошибка данных источника даёт `TeamMatchesSourceException` на всю команду (`team:fetch-matches` → FAILURE для этой команды), а не пропуск одного матча. Поле `skipped_count` в логе удалено.

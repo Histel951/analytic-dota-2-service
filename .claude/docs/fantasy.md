@@ -1,6 +1,6 @@
 # Fantasy
 
-## Расчёт очков (`Domain/Match/Service/FantasyScoreCalculator`)
+## Расчёт очков (`Fantasy/Domain/Scoring/FantasyScoreCalculator`)
 
 Считается в `ProcessFantasyScoreHandler` по строкам `player_match_stats` матча. Коэффициенты — `parameters.fantasy_scoring.*` в `config/services.yaml` («The International 2026») → `FantasyScoringConfig`. Чтобы поменять коэффициенты, достаточно отредактировать YAML; пересчёт уже посчитанных матчей не предусмотрен (`version` в таблице всегда 1).
 
@@ -24,7 +24,7 @@
 | rune | rune_pickups × k | 141 | support |
 
 `total_score` — сумма всех 16. При записи в ClickHouse всё, кроме `stun_score`, `teamfight_score` и `total_score`, приводится к `int`.
-## Группы ролей и эмблемы (`Domain/Fantasy/Enum`)
+## Группы ролей и эмблемы (`Fantasy/Domain/Analysis`)
 
 `RoleGroup` (роль = `player_match_stats.role`, 1–5 от бандла):
 
@@ -42,7 +42,7 @@
 
 ## Алгоритм `/api/fantasy/top-metrics`
 
-Вся работа — в `Infrastructure/ClickHouse/Repository/ClickHouseFantasyMetricAnalysisRepository`. `GetTopFantasyMetricsService` только вызывает три метода репозитория и маппит домен в DTO.
+Вся работа — в `Fantasy/Infrastructure/Persistence/ClickHouse/ClickHouseFantasyMetricAnalysisRepository`. `GetTopFantasyMetricsService` только вызывает три метода репозитория и маппит домен в DTO.
 
 **Общие фильтры** (`whereClause` над `player_match_stats pms`): `role IN (роли группы)`, `opendota_team_id IN (team_ids)`, `start_time` в `[date_from, date_to]`, фильтр `player_ids`.
 

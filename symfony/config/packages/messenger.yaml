@@ -14,7 +14,7 @@ framework:
             
             kafka_failed_matches:
                 dsn: 'ed+kafka://kafka:9092'
-                serializer: 'App\Infrastructure\Kafka\Serializer\MatchFailedKafkaSerializer'
+                serializer: 'App\Ingestion\Infrastructure\Kafka\MatchFailedKafkaSerializer'
                 options:
                     topics: ['dota2.matches.failed.v1']
                     producer:
@@ -30,15 +30,15 @@ framework:
                     multiplier: 2
 
         routing:
-            'App\Application\Match\Message\ParseMatchMessage':
+            'App\Ingestion\Application\Message\ParseMatchMessage':
                 - kafka_parse_matches
-            'App\Application\Match\Message\MatchFetchedMessage':
+            'App\Ingestion\Application\Message\MatchFetchedMessage':
                 - async
-            'App\Application\Match\Message\MatchAnalyticsProcessedMessage':
+            'App\Ingestion\Application\Message\MatchAnalyticsProcessedMessage':
                 - async
-            'App\Application\Match\Message\MatchFantasyCalculateMessage':
+            'App\Ingestion\Application\Message\MatchFantasyCalculateMessage':
                 - async
-            'App\Application\Match\Message\MatchFailedMessage':
+            'App\Ingestion\Application\Message\MatchFailedMessage':
                 - async
-            'App\Application\Match\Message\MatchFailedKafkaMessage':
+            'App\Ingestion\Application\Message\MatchFailedKafkaMessage':
                 - kafka_failed_matches

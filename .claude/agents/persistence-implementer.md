@@ -32,8 +32,8 @@ model: sonnet
 
 ## Твоя зона
 
-- `symfony/src/Infrastructure/Postgres/Repository/*`, `symfony/src/Infrastructure/ClickHouse/*`
-  (репозитории, `ClickHouseFactory`), при необходимости — общие помощники построения SQL рядом
+- `symfony/src/<Context>/Infrastructure/Persistence/{Postgres,ClickHouse}/*`
+  (репозитории; `ClickHouseFactory` — `symfony/src/Shared/Infrastructure/ClickHouse/`), при необходимости — общие помощники построения SQL рядом
   с ними.
 - `symfony/migrations/psql/NNN_*.sql`, `symfony/migrations/clickhouse/NNN_*.sql`.
 - Таблица «Миграции» и описание таблиц в `.claude/docs/database.md`, когда меняется схема.

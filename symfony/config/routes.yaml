@@ -1,5 +1,17 @@
-controllers:
+ingestion_controllers:
     resource:
-        path: ../src/UI/Http/Controller/
-        namespace: App\UI\Http\Controller
+        path: ../src/Ingestion/UI/Http/Controller/
+        namespace: App\Ingestion\UI\Http\Controller
+    type: attribute
+
+fantasy_controllers:
+    resource:
+        path: ../src/Fantasy/UI/Http/Controller/
+        namespace: App\Fantasy\UI\Http\Controller
+    type: attribute
+
+statistics_controllers:
+    resource:
+        path: ../src/Statistics/UI/Http/Controller/
+        namespace: App\Statistics\UI\Http\Controller
     type: attribute
